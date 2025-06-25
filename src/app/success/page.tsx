@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { sdk } from '@/lib/sdk';
@@ -18,7 +18,7 @@ import {
 } from '@heroicons/react/24/outline';
 import confetti from 'canvas-confetti';
 
-export default function PaymentSuccessPage() {
+function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [celebrationPlayed, setCelebrationPlayed] = useState(false);
@@ -342,5 +342,20 @@ export default function PaymentSuccessPage() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-green-100 to-emerald-50 dark:from-green-900 dark:via-green-800 dark:to-emerald-900 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-green-600 border-t-transparent mx-auto"></div>
+          <p className="text-lg text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    }>
+      <PaymentSuccessContent />
+    </Suspense>
   );
 }

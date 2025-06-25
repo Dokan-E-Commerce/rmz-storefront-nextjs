@@ -112,7 +112,7 @@ export default function CartPage() {
       if (checkoutData.type === 'free_order') {
         // Free order - redirect to order page like legacy
         toast.success('تم إنشاء الطلب بنجاح!'); // Arabic success message
-        router.push(`/orders/${checkoutData.order_id}`);
+        router.push(`/order/${checkoutData.order_id}`);
       } else if (checkoutData.type === 'payment_required') {
         // Payment required - redirect to payment page like legacy
         if (checkoutData.redirect_url || checkoutData.checkout_url) {

@@ -1,5 +1,5 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { productsApi } from './store-api';
+import { productsApi, categoriesApi } from './store-api';
 import { Product, PaginatedResponse } from './types';
 
 interface UseInfiniteProductsParams {
@@ -37,7 +37,7 @@ export const useInfiniteCategoryProducts = (slug: string, params: Omit<UseInfini
   return useInfiniteQuery({
     queryKey: ['category-products', slug, params],
     queryFn: ({ pageParam = 1 }) => 
-      productsApi.getCategoryProducts(slug, { 
+      categoriesApi.getCategoryProducts(slug, { 
         ...params, 
         page: pageParam,
         per_page: params.per_page || 12

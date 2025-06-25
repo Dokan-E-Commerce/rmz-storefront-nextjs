@@ -247,7 +247,16 @@
     "noReviews": "No reviews yet. Be the first to review this product!",
     "stars": "stars",
     "helpful": "Helpful",
-    "reportReview": "Report Review"
+    "reportReview": "Report Review",
+    "selectRating": "Select a rating",
+    "pleaseSelectRating": "Please select a rating",
+    "pleaseWriteComment": "Please write a comment",
+    "reviewSubmitted": "Review submitted successfully",
+    "poor": "Poor",
+    "fair": "Fair",
+    "good": "Good",
+    "veryGood": "Very Good",
+    "excellent": "Excellent"
   },
   "notifications": {
     "success": "Success",

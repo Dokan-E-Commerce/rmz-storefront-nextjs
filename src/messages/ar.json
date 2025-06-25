@@ -247,7 +247,16 @@
     "noReviews": "لا توجد تقييمات بعد. كن أول من يقيم هذا المنتج!",
     "stars": "نجوم",
     "helpful": "مفيد",
-    "reportReview": "الإبلاغ عن التقييم"
+    "reportReview": "الإبلاغ عن التقييم",
+    "selectRating": "اختر تقييماً",
+    "pleaseSelectRating": "يرجى اختيار تقييم",
+    "pleaseWriteComment": "يرجى كتابة تعليق",
+    "reviewSubmitted": "تم إرسال التقييم بنجاح",
+    "poor": "سيء",
+    "fair": "مقبول",
+    "good": "جيد",
+    "veryGood": "جيد جداً",
+    "excellent": "ممتاز"
   },
   "notifications": {
     "success": "نجاح",

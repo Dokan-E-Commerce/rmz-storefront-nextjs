@@ -97,7 +97,9 @@ export const useWishlist = create<WishlistStore>()(
       },
     }),
     {
+      name: 'wishlist-storage',
       partialize: (state) => ({ 
+        items: state.items,
         count: state.count 
       }),
     }

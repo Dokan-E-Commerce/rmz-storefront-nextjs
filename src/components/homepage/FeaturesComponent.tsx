@@ -46,11 +46,11 @@ export default function FeaturesComponent({ component }: FeaturesComponentProps)
         </div>
 
         <div className="bg-gradient-to-br from-primary to-primary/90 rounded-3xl p-8 md:p-12 shadow-xl">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 justify-items-center">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 justify-items-center place-items-center">
             {features.map((feature, index) => (
               <div
                 key={feature.id || index}
-                className={`flex flex-col items-center text-center space-y-3 group max-w-xs w-full`}
+                className={`flex flex-col items-center justify-center text-center space-y-3 group max-w-xs w-full`}
               >
                 {/* Icon */}
                 <div className="flex-shrink-0 w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:bg-white/30 group-hover:scale-110">

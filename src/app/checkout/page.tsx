@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { sdk } from '@/lib/sdk';
 import { useAuth } from '@/lib/auth';
-import { useCart } from '@/hooks/useCart';
+import { useCart } from '@/lib/cart';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { 
@@ -37,7 +37,7 @@ interface CheckoutResult {
   };
 }
 
-export default function CheckoutResultPage() {
+function CheckoutResultContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [celebrationPlayed, setCelebrationPlayed] = useState(false);
@@ -230,7 +230,7 @@ export default function CheckoutResultPage() {
               {/* Actions */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {isAuthenticated ? (
-                  <Link href={`/orders/${order.id}`}>
+                  <Link href={`/order/${order.id}`}>
                     <Button className="w-full">View Order Details</Button>
                   </Link>
                 ) : (
@@ -267,9 +267,9 @@ export default function CheckoutResultPage() {
           
           <div className="bg-yellow-100 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6 text-left">
             <p className="text-sm text-yellow-800 dark:text-yellow-200">
-              <strong>Checkout ID:</strong> {checkout.id}<br />
-              <strong>Amount:</strong> SAR {checkout.amount}<br />
-              <strong>Status:</strong> {checkout.status}
+              <strong>Checkout ID:</strong> {result?.checkout?.id || checkoutId}<br />
+              <strong>Amount:</strong> SAR {result?.checkout?.amount || 'N/A'}<br />
+              <strong>Status:</strong> {result?.checkout?.status || 'Pending'}
             </p>
           </div>
           
@@ -311,5 +311,20 @@ export default function CheckoutResultPage() {
         <p className="text-lg text-muted-foreground">Processing your request...</p>
       </div>
     </div>
+  );
+}
+
+export default function CheckoutResultPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent mx-auto"></div>
+          <p className="text-lg text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    }>
+      <CheckoutResultContent />
+    </Suspense>
   );
 }

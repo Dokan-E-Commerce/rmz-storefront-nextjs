@@ -70,11 +70,6 @@ export default function OrdersPage() {
               Orders ({orders?.data?.length || 0})
             </h1>
           </div>
-          <Link href="/account">
-            <Button variant="outline">
-              Back to Account
-            </Button>
-          </Link>
         </div>
 
         {!orders?.data || orders.data.length === 0 ? (
@@ -165,7 +160,7 @@ export default function OrdersPage() {
                     <div className="text-sm text-muted-foreground">
                       {order.items?.length || 0} {order.items?.length === 1 ? 'item' : 'items'}
                     </div>
-                    <Link href={`/orders/${order.id}`}>
+                    <Link href={`/order/${order.id}`}>
                       <Button variant="outline" size="sm" className="w-full sm:w-auto">
                         <EyeIcon className="h-4 w-4 mr-2" />
                         View Details
