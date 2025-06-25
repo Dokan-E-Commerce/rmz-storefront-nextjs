@@ -160,7 +160,7 @@ export default function DynamicHomepage() {
               {t('addComponentsInstructions')}
             </p>
             <Link
-              href="/dashboard"
+              href="https://app.rmz.gg"
               className="inline-flex items-center space-x-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
             >
               <CogIcon className="h-4 w-4" />

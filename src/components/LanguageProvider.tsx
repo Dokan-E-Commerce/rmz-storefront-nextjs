@@ -57,7 +57,7 @@ export function LanguageProvider({ children, initialLanguage }: LanguageProvider
 
     updateDocumentAttributes(targetLocale);
     setIsHydrated(true);
-  }, [serverLanguage, locale]);
+  }, [serverLanguage]); // Remove locale from dependencies to prevent infinite loop
 
   // Update document attributes when locale changes
   useEffect(() => {
