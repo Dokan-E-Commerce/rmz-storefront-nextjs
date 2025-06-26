@@ -35,15 +35,44 @@ export default function ClientProductsPage() {
     threshold: 0.1,
   });
 
-  const queryParams = useMemo(() => ({
-    per_page: 12,
-    search: debouncedSearchTerm || undefined,
-    sort: sortBy || undefined,
-    type: selectedType || undefined,
-    price_min: priceRange.min ? Number(priceRange.min) : undefined,
-    price_max: priceRange.max ? Number(priceRange.max) : undefined,
-    in_stock: inStockOnly || undefined,
-  }), [debouncedSearchTerm, sortBy, selectedType, priceRange.min, priceRange.max, inStockOnly]);
+  const queryParams = useMemo(() => {
+    // Validate and sanitize parameters according to backend validation rules
+    const params: any = {
+      per_page: Math.min(Math.max(12, 1), 50), // min:1|max:50
+    };
+
+    // Search validation: max:255
+    if (debouncedSearchTerm && debouncedSearchTerm.trim().length <= 255) {
+      params.search = debouncedSearchTerm.trim();
+    }
+
+    // Sort validation: in:price_asc,price_desc,name_asc,name_desc,created_asc,created_desc
+    const validSorts = ['price_asc', 'price_desc', 'name_asc', 'name_desc', 'created_asc', 'created_desc'];
+    if (sortBy && validSorts.includes(sortBy)) {
+      params.sort = sortBy;
+    }
+
+    // Type validation: in:digital,subscription,course
+    const validTypes = ['digital', 'subscription', 'course'];
+    if (selectedType && validTypes.includes(selectedType)) {
+      params.type = selectedType;
+    }
+
+    // Price validation: numeric|min:0
+    if (priceRange.min && !isNaN(Number(priceRange.min)) && Number(priceRange.min) >= 0) {
+      params.price_min = Number(priceRange.min);
+    }
+    if (priceRange.max && !isNaN(Number(priceRange.max)) && Number(priceRange.max) >= 0) {
+      params.price_max = Number(priceRange.max);
+    }
+
+    // Stock validation: boolean - send as string "1" which Laravel accepts as boolean true
+    if (inStockOnly) {
+      params.in_stock = "1";
+    }
+
+    return params;
+  }, [debouncedSearchTerm, sortBy, selectedType, priceRange.min, priceRange.max, inStockOnly]);
 
   const {
     data: productsData,
@@ -95,7 +124,14 @@ export default function ClientProductsPage() {
             type="text"
             placeholder={locale === 'ar' ? 'البحث عن المنتجات...' : 'Search products...'}
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              // Enforce max length of 255 characters to match backend validation
+              if (value.length <= 255) {
+                setSearchTerm(value);
+              }
+            }}
+            maxLength={255}
             className="w-full sm:w-64 px-4 py-2 bg-background/50 backdrop-blur-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring transition-all"
           />
         </div>
@@ -193,7 +229,14 @@ export default function ClientProductsPage() {
                     </label>
                     <select
                       value={selectedType}
-                      onChange={(e) => setSelectedType(e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // Validate against backend accepted values: digital,subscription,course
+                        const validTypes = ['', 'digital', 'subscription', 'course'];
+                        if (validTypes.includes(value)) {
+                          setSelectedType(value);
+                        }
+                      }}
                       className="w-full px-4 py-3 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                     >
                       <option value="">{locale === 'ar' ? 'جميع الأنواع' : 'All Types'}</option>
@@ -209,7 +252,14 @@ export default function ClientProductsPage() {
                     </label>
                     <select
                       value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // Validate against backend accepted values: price_asc,price_desc,name_asc,name_desc,created_asc,created_desc
+                        const validSorts = ['price_asc', 'price_desc', 'name_asc', 'name_desc', 'created_asc', 'created_desc'];
+                        if (validSorts.includes(value)) {
+                          setSortBy(value);
+                        }
+                      }}
                       className="w-full px-4 py-3 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                     >
                       <option value="created_desc">{locale === 'ar' ? 'الأحدث أولا' : 'Newest First'}</option>
@@ -232,14 +282,30 @@ export default function ClientProductsPage() {
                       type="number"
                       placeholder={locale === 'ar' ? 'الأدنى' : 'Minimum'}
                       value={priceRange.min}
-                      onChange={(e) => setPriceRange(prev => ({ ...prev, min: e.target.value }))}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // Only allow positive numbers (min:0 in backend validation)
+                        if (value === '' || (!isNaN(Number(value)) && Number(value) >= 0)) {
+                          setPriceRange(prev => ({ ...prev, min: value }));
+                        }
+                      }}
+                      min="0"
+                      step="0.01"
                       className="px-4 py-3 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                     />
                     <input
                       type="number"
                       placeholder={locale === 'ar' ? 'الأعلى' : 'Maximum'}
                       value={priceRange.max}
-                      onChange={(e) => setPriceRange(prev => ({ ...prev, max: e.target.value }))}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // Only allow positive numbers (min:0 in backend validation)
+                        if (value === '' || (!isNaN(Number(value)) && Number(value) >= 0)) {
+                          setPriceRange(prev => ({ ...prev, max: value }));
+                        }
+                      }}
+                      min="0"
+                      step="0.01"
                       className="px-4 py-3 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                     />
                   </div>

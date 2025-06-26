@@ -75,6 +75,7 @@ export const productsApi = {
     return await sdk.products.getReviews(productId, params) as any;
   },
 
+
   search: async (query: string, filters?: any) => {
     return await sdk.products.search(query, filters) as any;
   },

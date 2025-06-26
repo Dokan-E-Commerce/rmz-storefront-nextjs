@@ -76,7 +76,7 @@ export default function CourseDetailPage({ params }: CourseDetailPageProps) {
         <div className="text-center">
           <div className="bg-card/30 backdrop-blur-md border border-border/50 rounded-xl p-12 shadow-xl max-w-md mx-auto">
             <BookOpenIcon className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-foreground mb-4">Login Required</h1>
+            <h1 className="text-2xl font-bold text-foreground mb-4">{t('login_required')}</h1>
             <p className="text-muted-foreground mb-8">Please log in to access course content.</p>
             <Link href={`/login?redirect=/courses/${id}`}>
               <Button className="w-full">Login</Button>

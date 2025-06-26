@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { useTranslation } from '@/lib/useTranslation';
+import { useLanguage } from '@/components/LanguageProvider';
 
 interface BannerImage {
   id: number;
@@ -30,8 +31,10 @@ interface BannerComponentProps {
 
 export default function BannerComponent({ component }: BannerComponentProps) {
   const { t } = useTranslation();
+  const { locale } = useLanguage();
   const [currentSlide, setCurrentSlide] = useState(0);
   const images = component.data.images || [];
+  const isRTL = locale === 'ar';
 
   if (!images.length) return null;
 
@@ -79,10 +82,14 @@ export default function BannerComponent({ component }: BannerComponentProps) {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="relative group">
-            <div className="overflow-hidden rounded-3xl shadow-2xl">
+            <div className="overflow-hidden rounded-3xl shadow-2xl" dir={isRTL ? 'rtl' : 'ltr'}>
               <div
                 className="flex transition-transform duration-700 ease-out"
-                style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+                style={{ 
+                  transform: isRTL 
+                    ? `translateX(${currentSlide * 100}%)` 
+                    : `translateX(-${currentSlide * 100}%)`
+                }}
               >
                 {images.map((image, index) => (
                   <div key={image.id} className="flex-shrink-0 w-full">
@@ -94,22 +101,22 @@ export default function BannerComponent({ component }: BannerComponentProps) {
 
             {/* Enhanced Navigation arrows */}
             <button
-              onClick={prevSlide}
+              onClick={isRTL ? nextSlide : prevSlide}
               className="absolute left-6 top-1/2 transform -translate-y-1/2 bg-card/90 backdrop-blur-sm hover:bg-card text-foreground p-4 rounded-full shadow-2xl transition-all duration-300 opacity-0 group-hover:opacity-100 hover:scale-110 border border-border/20"
               aria-label="Previous slide"
             >
-              <ChevronLeftIcon className="h-6 w-6" />
+              {isRTL ? <ChevronRightIcon className="h-6 w-6" /> : <ChevronLeftIcon className="h-6 w-6" />}
             </button>
             <button
-              onClick={nextSlide}
+              onClick={isRTL ? prevSlide : nextSlide}
               className="absolute right-6 top-1/2 transform -translate-y-1/2 bg-card/90 backdrop-blur-sm hover:bg-card text-foreground p-4 rounded-full shadow-2xl transition-all duration-300 opacity-0 group-hover:opacity-100 hover:scale-110 border border-border/20"
               aria-label="Next slide"
             >
-              <ChevronRightIcon className="h-6 w-6" />
+              {isRTL ? <ChevronLeftIcon className="h-6 w-6" /> : <ChevronRightIcon className="h-6 w-6" />}
             </button>
 
             {/* Enhanced Dots indicator */}
-            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-3 bg-black/20 backdrop-blur-sm rounded-full px-6 py-3">
+            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-3 bg-black/20 backdrop-blur-sm rounded-full px-6 py-3">
               {images.map((_, index) => (
                 <button
                   key={index}

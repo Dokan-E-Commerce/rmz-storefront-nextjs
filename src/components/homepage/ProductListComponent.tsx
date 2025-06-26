@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useTranslation } from '@/lib/useTranslation';
+import { useLanguage } from '@/components/LanguageProvider';
 import { ChevronLeftIcon, ChevronRightIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 import ProductCard from '@/components/ui/ProductCard';
 
@@ -48,7 +49,9 @@ interface ProductListComponentProps {
 
 export default function ProductListComponent({ component }: ProductListComponentProps) {
   const { t } = useTranslation();
+  const { locale } = useLanguage();
   const [currentSlide, setCurrentSlide] = useState(0);
+  const isRTL = locale === 'ar';
 
   const { title, products = [], view_all_link, settings } = component.data;
   const isGrid = settings?.is_grid || false;
@@ -58,7 +61,8 @@ export default function ProductListComponent({ component }: ProductListComponent
     return null;
   }
 
-  const maxSlides = Math.max(1, Math.ceil(products.length / itemsPerSlide) - 1);
+  const totalSlides = Math.ceil(products.length / itemsPerSlide);
+  const maxSlides = Math.max(0, totalSlides - 1);
 
   const nextSlide = () => {
     setCurrentSlide((prev) => Math.min(prev + 1, maxSlides));
@@ -98,26 +102,45 @@ export default function ProductListComponent({ component }: ProductListComponent
           // Grid layout
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {products.slice(0, isGrid ? 12 : 4).map((product) => (
-              <ProductCard key={product.id} product={product} />
+              <ProductCard 
+                key={product.id} 
+                product={product} 
+                variant="default"
+                showAddToCart={true}
+                showWishlist={true}
+              />
             ))}
           </div>
         ) : (
           // Carousel layout
           <div className="relative">
-            <div className="overflow-hidden">
+            <div className="overflow-hidden" dir={isRTL ? 'rtl' : 'ltr'}>
               <div 
                 className="flex transition-transform duration-500 ease-in-out"
-                style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+                style={{ 
+                  transform: isRTL 
+                    ? `translateX(${currentSlide * 100}%)` 
+                    : `translateX(-${currentSlide * 100}%)` 
+                }}
               >
-                {Array.from({ length: Math.ceil(products.length / itemsPerSlide) }, (_, slideIndex) => (
-                  <div key={slideIndex} className="flex-shrink-0 w-full">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                      {products.slice(slideIndex * itemsPerSlide, (slideIndex + 1) * itemsPerSlide).map((product) => (
-                        <ProductCard key={product.id} product={product} />
-                      ))}
+                {Array.from({ length: totalSlides }, (_, slideIndex) => {
+                  const slideProducts = products.slice(slideIndex * itemsPerSlide, (slideIndex + 1) * itemsPerSlide);
+                  return (
+                    <div key={slideIndex} className="flex-shrink-0 w-full">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {slideProducts.map((product) => (
+                          <ProductCard 
+                            key={product.id} 
+                            product={product} 
+                            variant="default"
+                            showAddToCart={true}
+                            showWishlist={true}
+                          />
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -127,26 +150,28 @@ export default function ProductListComponent({ component }: ProductListComponent
                 <button
                   onClick={prevSlide}
                   disabled={currentSlide === 0}
-                  className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-card/80 hover:bg-card text-foreground p-2 rounded-full shadow-lg transition-all z-10 disabled:opacity-50 disabled:cursor-not-allowed border border-border/50"
+                  className={`absolute ${isRTL ? 'right-4' : 'left-4'} top-1/2 transform -translate-y-1/2 bg-card/80 hover:bg-card text-foreground p-2 rounded-full shadow-lg transition-all z-10 disabled:opacity-50 disabled:cursor-not-allowed border border-border/50`}
                   aria-label="Previous products"
                 >
-                  <ChevronLeftIcon className="h-6 w-6" />
+                  {isRTL ? (
+                    <ChevronRightIcon className="h-6 w-6" />
+                  ) : (
+                    <ChevronLeftIcon className="h-6 w-6" />
+                  )}
                 </button>
                 <button
                   onClick={nextSlide}
                   disabled={currentSlide >= maxSlides}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-card/80 hover:bg-card text-foreground p-2 rounded-full shadow-lg transition-all z-10 disabled:opacity-50 disabled:cursor-not-allowed border border-border/50"
+                  className={`absolute ${isRTL ? 'left-4' : 'right-4'} top-1/2 transform -translate-y-1/2 bg-card/80 hover:bg-card text-foreground p-2 rounded-full shadow-lg transition-all z-10 disabled:opacity-50 disabled:cursor-not-allowed border border-border/50`}
                   aria-label="Next products"
                 >
-                  <ChevronRightIcon className="h-6 w-6" />
+                  {isRTL ? (
+                    <ChevronLeftIcon className="h-6 w-6" />
+                  ) : (
+                    <ChevronRightIcon className="h-6 w-6" />
+                  )}
                 </button>
 
-                {/* Hint text */}
-                <div className="text-center mt-6">
-                  <p className="text-sm text-muted-foreground">
-                    {t('swipeForMore')}
-                  </p>
-                </div>
               </>
             )}
           </div>

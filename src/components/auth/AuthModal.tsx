@@ -112,13 +112,13 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
     setPhoneError('');
 
     if (!phoneValue) {
-      setPhoneError('Please enter a phone number');
+      setPhoneError(t('please_enter_phone_number'));
       return;
     }
 
     // Validate phone number using libphonenumber-js
     if (!isValidPhoneNumber(phoneValue)) {
-      setPhoneError('Please enter a valid phone number');
+      setPhoneError(t('please_enter_phone_number'));
       return;
     }
 
@@ -158,7 +158,12 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
       setResendCooldown(30); // Start cooldown when OTP is sent
       setOtpSentTime(Date.now()); // Track when OTP was sent
       setVerificationAttempts(0); // Reset attempts for new OTP
-      toast.success(t('verification_code_sent'));
+      toast.success(
+        <div style={{ direction: 'rtl' }}>
+          {t('verification_code_sent')}{' '}
+          <span style={{ direction: 'ltr', display: 'inline-block' }}>{phoneValue}</span>
+        </div>
+      );
     } catch (error: any) {
       devWarn('Phone submission error:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Failed to send verification code';
@@ -256,7 +261,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
         setVerificationCooldown(30); // 30 seconds after third failure
       }
       
-      toast.error(error.response?.data?.message || 'Invalid verification code');
+      toast.error(error.response?.data?.message || t('invalid_verification_code'));
     }
     setIsLoading(false);
   };
@@ -329,7 +334,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
       setVerificationCooldown(0);
       setOtpSentTime(Date.now());
       
-      toast.success('Verification code resent');
+      toast.success(t('verification_code_resent'));
       setResendCooldown(30); // Set 30 second cooldown
     } catch (error: any) {
       // If we get 429 error, still set cooldown

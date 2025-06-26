@@ -308,6 +308,10 @@ const translations = {
     email_address: 'Email Address',
     creating_account: 'Creating Account...',
     complete_registration_button: 'Complete Registration',
+    please_enter_phone_number: 'Please enter a phone number',
+    invalid_verification_code: 'Invalid verification code',
+    verification_code_resent: 'Verification code resent',
+    no_image_placeholder: 'No image available',
 
     // Pages
     pages: 'Pages',
@@ -473,7 +477,7 @@ const translations = {
     dont_have_account: 'ليس لديك حساب؟',
     login_required: 'تسجيل الدخول مطلوب',
     registration_successful: 'التسجيل ناجح',
-    login_successful: 'تسجيل الدخول ناجح',
+    login_successful: 'تم تسجيل الدخول بنجاح',
     logout_successful: 'تسجيل الخروج ناجح',
 
     // Notifications
@@ -641,6 +645,10 @@ const translations = {
     email_address: 'عنوان البريد الإلكتروني',
     creating_account: 'جاري إنشاء الحساب...',
     complete_registration_button: 'إكمال التسجيل',
+    please_enter_phone_number: 'يرجى إدخال رقم الهاتف',
+    invalid_verification_code: 'رمز التحقق غير صحيح',
+    verification_code_resent: 'تم إعادة إرسال رمز التحقق',
+    no_image_placeholder: 'لا توجد صورة متاحة',
 
     // Pages
     pages: 'الصفحات',

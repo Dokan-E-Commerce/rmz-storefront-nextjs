@@ -128,15 +128,21 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                     className="flex items-center p-3 rounded-lg hover:bg-muted/50 transition-colors"
                   >
                     <div className="w-16 h-16 bg-muted rounded-lg overflow-hidden flex-shrink-0">
-                      {product.image?.url ? (
+                      {product.image?.url || product.image?.full_link || product.image?.path ? (
                         <img
-                          src={product.image.url}
+                          src={product.image.url || product.image.full_link || `/storage/${product.image.path}${product.image.filename}`}
                           alt={product.name}
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
-                          No Image
+                        <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                          <svg
+                            className="w-6 h-6 text-muted-foreground/50"
+                            fill="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                          </svg>
                         </div>
                       )}
                     </div>

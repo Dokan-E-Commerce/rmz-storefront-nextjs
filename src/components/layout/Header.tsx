@@ -395,7 +395,7 @@ export default function Header() {
                           </div>
                           <div className="flex-1">
                             <p className="font-medium text-foreground">{customer?.first_name}</p>
-                            <p className="text-sm text-muted-foreground" dir="ltr">
+                            <p className="text-sm text-muted-foreground text-right" dir="ltr">
                               {customer?.phone ? formatPhoneNumber(customer.phone, customer?.country_code) : customer?.email}
                             </p>
                           </div>

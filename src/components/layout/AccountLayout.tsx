@@ -28,7 +28,7 @@ export default function AccountLayout({ children }: AccountLayoutProps) {
         <div className="text-center">
           <div className="bg-card/30 backdrop-blur-md border border-border/50 rounded-xl p-12 shadow-xl max-w-md mx-auto">
             <h1 className="text-2xl font-bold text-foreground mb-4">Please Login</h1>
-            <p className="text-muted-foreground mb-8">Login is required to access this page</p>
+            <p className="text-muted-foreground mb-8">{t('login_required')}</p>
             <Button onClick={() => setIsAuthModalOpen(true)}>
               {t('login')}
             </Button>

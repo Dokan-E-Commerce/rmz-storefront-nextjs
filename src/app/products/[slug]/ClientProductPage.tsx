@@ -28,7 +28,7 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
   const { locale } = useLanguage();
   const router = useRouter();
   const { addItem } = useCart();
-  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const { addToWishlist, removeFromWishlist, isInWishlist, fetchWishlist } = useWishlist();
   const { isAuthenticated } = useAuth();
   const { selectedCurrency, formatPrice } = useCurrency();
   const { openAuthModal } = useModal();
@@ -40,11 +40,19 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
   const [isLoading, setIsLoading] = useState(false);
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
   const [isQuickPurchasing, setIsQuickPurchasing] = useState(false);
+  const [imageLoadError, setImageLoadError] = useState(false);
 
   // Track hydration to prevent SSR mismatch
   useEffect(() => {
     setIsHydrated(true);
   }, []);
+
+  // Fetch wishlist when user is authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchWishlist();
+    }
+  }, [isAuthenticated, fetchWishlist]);
 
   // Safe price formatting that handles SSR
   const formatPriceSafe = (price: number | string) => {
@@ -101,6 +109,45 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
       return true;
     });
   }, [reviewsData]);
+
+  // Get total review count from pagination data
+  const totalReviewCount = reviewsData?.pages?.[0]?.pagination?.total || 0;
+
+  // Calculate review stats using correct totals instead of just paginated data
+  const reviewStats = useMemo(() => {
+    // Use the actual total count from pagination, not just loaded reviews
+    const totalReviews = totalReviewCount;
+    
+    if (!totalReviews || totalReviews === 0) {
+      return {
+        data: {
+          total_reviews: 0,
+          average_rating: 0,
+          rating_distribution: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 }
+        }
+      };
+    }
+
+    // Use product's rating if available, otherwise calculate from loaded reviews
+    const productAverageRating = product?.rating ? Number(product.rating) : 
+      (allReviews.length > 0 ?
+        allReviews.reduce((acc, review) => acc + (Number(review.rating) || 0), 0) / allReviews.length : 0);
+    
+    // Calculate rating distribution from loaded reviews only (this is approximate but better than nothing)
+    const ratingDistribution = allReviews.reduce((dist, review) => {
+      const rating = review.rating?.toString() || '1';
+      dist[rating] = (dist[rating] || 0) + 1;
+      return dist;
+    }, { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 });
+
+    return {
+      data: {
+        total_reviews: totalReviews,
+        average_rating: productAverageRating,
+        rating_distribution: ratingDistribution
+      }
+    };
+  }, [allReviews, totalReviewCount, product?.rating]);
 
   const calculatedPrice = useMemo(() => {
     if (!product) return { total: 0, formatted: formatPriceSafe(0), basePrice: 0, fieldPriceAddition: 0, unitPrice: 0 };
@@ -204,7 +251,8 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
 
   const handleWishlistToggle = async () => {
     if (!isAuthenticated) {
-      toast.error('Login required');
+      toast.error(t('login_required'));
+      openAuthModal();
       return;
     }
 
@@ -214,10 +262,10 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
     try {
       if (isInWishlist(product.id)) {
         await removeFromWishlist(product.id);
-        toast.success('Removed from wishlist');
+        toast.success(locale === 'ar' ? 'تم الحذف من المفضلة' : 'Removed from wishlist');
       } else {
-        await addToWishlist(product.id);
-        toast.success('Added to wishlist');
+        await addToWishlist(product.id, product);
+        toast.success(locale === 'ar' ? 'تم الإضافة للمفضلة' : 'Added to wishlist');
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to update wishlist');
@@ -226,8 +274,6 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
     }
   };
 
-  // Get total review count from pagination data
-  const totalReviewCount = reviewsData?.pages?.[0]?.pagination?.total || 0;
   
   // Use product's overall rating if available, otherwise calculate from loaded reviews
   const averageRating = product?.rating ? Number(product.rating) : 
@@ -310,11 +356,12 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8 lg:mb-12">
           <div className="space-y-4">
             <div className="aspect-square bg-card/30 backdrop-blur-md border border-border/50 rounded-lg overflow-hidden">
-              {product.image?.full_link || product.image?.url || product.image?.path ? (
+              {(product.image?.full_link || product.image?.url || product.image?.path) && !imageLoadError ? (
                 <img
                   src={product.image.full_link || product.image.url || `/storage/${product.image.path}${product.image.filename}`}
                   alt={product.image.alt_text || product.name}
                   className="w-full h-full object-cover"
+                  onError={() => setImageLoadError(true)}
                 />
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-muted/30 to-muted/50 border-2 border-dashed border-border/40">
@@ -326,7 +373,7 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
                     <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
                   </svg>
                   <span className="text-muted-foreground/70 text-center px-4">
-                    {locale === 'ar' ? 'لا توجد صورة متاحة' : 'No image available'}
+                    {t('no_image_placeholder')}
                   </span>
                 </div>
               )}
@@ -589,13 +636,13 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
                     {isWishlistLoading ?
                       (locale === 'ar' ? 'جاري التحميل...' : 'Loading...') :
                       isInWishlist(product.id) ?
-                        (locale === 'ar' ? 'في المفضلة' : 'In Wishlist') :
+                        (locale === 'ar' ? 'إزالة من المفضلة' : 'Remove from Wishlist') :
                         (locale === 'ar' ? 'أضف للمفضلة' : 'Add to Wishlist')
                     }
                   </span>
                   <span className="sm:hidden">
                     {isInWishlist(product.id) ?
-                      (locale === 'ar' ? 'في المفضلة' : 'In Wishlist') :
+                      (locale === 'ar' ? 'إزالة' : 'Remove') :
                       (locale === 'ar' ? 'المفضلة' : 'Wishlist')
                     }
                   </span>
@@ -678,8 +725,64 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
 
             <div className="bg-card/30 backdrop-blur-md border border-border/50 rounded-xl shadow-xl p-6">
               <h2 className="text-2xl font-bold text-foreground mb-4">
-                {locale === 'ar' ? 'المراجعات' : 'Reviews'} {allReviews.length > 0 && `(${allReviews.length})`}
+                {locale === 'ar' ? 'المراجعات' : 'Reviews'} ({reviewStats?.data?.total_reviews ?? totalReviewCount})
               </h2>
+
+              {/* Review Stats */}
+              {reviewStats?.data && reviewStats.data.total_reviews > 0 && (
+                <div className="bg-card/30 backdrop-blur-md border border-border/50 rounded-xl p-6 mb-6">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between">
+                    <div className="mb-4 md:mb-0">
+                      <div className="flex items-center mb-2">
+                        <div className="flex">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <span key={star}>
+                              {star <= Math.round(reviewStats.data.average_rating) ? (
+                                <StarSolidIcon className="h-5 w-5 text-yellow-400" />
+                              ) : (
+                                <StarIcon className="h-5 w-5 text-gray-300" />
+                              )}
+                            </span>
+                          ))}
+                        </div>
+                        <span className="ml-2 text-2xl font-bold text-foreground">
+                          {reviewStats.data.average_rating.toFixed(1)}
+                        </span>
+                      </div>
+                      <p className="text-muted-foreground">
+                        {locale === 'ar' 
+                          ? `بناءً على ${reviewStats.data.total_reviews} تقييم`
+                          : `Based on ${reviewStats.data.total_reviews} reviews`
+                        }
+                      </p>
+                    </div>
+                    
+                    {/* Rating Breakdown */}
+                    <div className="space-y-2">
+                      {[5, 4, 3, 2, 1].map((rating) => (
+                        <div key={rating} className="flex items-center text-sm">
+                          <span className="w-8 text-muted-foreground">{rating}★</span>
+                          <div className="w-24 h-2 bg-muted rounded-full mx-2">
+                            <div
+                              className="h-2 bg-yellow-400 rounded-full"
+                              style={{
+                                width: `${
+                                  reviewStats.data.total_reviews > 0
+                                    ? ((reviewStats.data.rating_distribution[rating.toString()] || 0) / reviewStats.data.total_reviews) * 100
+                                    : 0
+                                }%`,
+                              }}
+                            />
+                          </div>
+                          <span className="text-muted-foreground">
+                            {reviewStats.data.rating_distribution[rating.toString()] || 0}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {reviewsLoading ? (
                 <div className="space-y-4">

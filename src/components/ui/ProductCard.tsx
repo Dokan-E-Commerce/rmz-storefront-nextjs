@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useState } from 'react';
 import { useTranslation } from '@/lib/useTranslation';
 import { useAddToCart } from '@/hooks/useAddToCart';
 import { Button } from '@/components/ui/button';
@@ -52,6 +52,7 @@ function ProductCard({
   const { t } = useTranslation();
   const { addToCart, isAddingToCart } = useAddToCart();
   const { formatPrice, convertPrice } = useCurrency();
+  const [imageLoadError, setImageLoadError] = useState(false);
 
   const hasDiscount = product.is_discounted || product.price.discount_percentage > 0;
 
@@ -95,12 +96,13 @@ function ProductCard({
       {/* Product Image */}
       <Link href={`/products/${product.slug}`} className="block relative">
         <div className={`relative w-full ${getImageHeight()} bg-gradient-to-br from-muted/30 to-muted/50`}>
-          {product.image?.full_link ? (
+          {(product.image?.full_link || product.image?.url || product.image?.path) && !imageLoadError ? (
             <Image
-              src={product.image.full_link}
+              src={product.image.full_link || product.image.url || `/storage/${product.image.path}${product.image.filename}`}
               alt={product.image.alt_text || product.name}
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-300"
+              onError={() => setImageLoadError(true)}
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-muted/30 to-muted/50 border-2 border-dashed border-border/40 flex items-center justify-center">
@@ -112,7 +114,7 @@ function ProductCard({
                 >
                   <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
                 </svg>
-                <span className="text-xs text-muted-foreground/70 font-medium">{t('noImage')}</span>
+                <span className="text-xs text-muted-foreground/70 font-medium">{t('no_image_placeholder')}</span>
               </div>
             </div>
           )}

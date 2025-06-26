@@ -29,14 +29,19 @@ interface Review {
   comment: string;
   created_at: string;
   reviewer: Reviewer;
-  product: Product;
+  product?: Product; // Product is optional for store reviews
+  type?: 'store' | 'product'; // Review type
 }
 
 interface ReviewStats {
   average_rating: number;
   total_reviews: number;
-  rating_breakdown: {
-    [key: string]: number;
+  rating_distribution: {
+    "1": number;
+    "2": number;
+    "3": number;
+    "4": number;
+    "5": number;
   };
 }
 
@@ -45,12 +50,13 @@ export default function ClientReviewsPage() {
   const { locale } = useLanguage();
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'highest' | 'lowest'>('newest');
   const [filterRating, setFilterRating] = useState<number | null>(null);
+  const [reviewType, setReviewType] = useState<'all' | 'store' | 'product'>('all');
   const { ref, inView } = useInView();
 
   // Fetch review stats
   const { data: stats } = useQuery<ReviewStats>({
     queryKey: ['review-stats'],
-    queryFn: reviewsApi.getStats,
+    queryFn: () => reviewsApi.getStats(),
   });
 
   // Fetch reviews with infinite scroll
@@ -62,14 +68,21 @@ export default function ClientReviewsPage() {
     isLoading,
     isError,
   } = useInfiniteQuery({
-    queryKey: ['reviews', sortBy, filterRating],
-    queryFn: ({ pageParam = 1 }) =>
-      reviewsApi.getAll({
+    queryKey: ['reviews', sortBy, filterRating, reviewType],
+    queryFn: ({ pageParam = 1 }) => {
+      const params = {
         page: pageParam,
         per_page: 10,
         sort: sortBy,
         rating: filterRating,
-      }),
+        type: reviewType === 'all' ? undefined : reviewType,
+      };
+      
+      // Debug logging
+      console.log('Reviews API params:', params);
+      
+      return reviewsApi.getAll(params);
+    },
     getNextPageParam: (lastPage: any, pages) => {
       const nextPage = pages.length + 1;
       return lastPage.data?.length === 10 ? nextPage : undefined;
@@ -162,15 +175,15 @@ export default function ClientReviewsPage() {
                           className="h-2 bg-yellow-400 rounded-full"
                           style={{
                             width: `${
-                              stats.total_reviews > 0
-                                ? ((stats.rating_breakdown[rating] || 0) / stats.total_reviews) * 100
+                              stats.total_reviews > 0 && stats.rating_distribution
+                                ? ((stats.rating_distribution[rating.toString() as keyof typeof stats.rating_distribution] || 0) / stats.total_reviews) * 100
                                 : 0
                             }%`,
                           }}
                         />
                       </div>
                       <span className="text-muted-foreground">
-                        {stats.rating_breakdown[rating] || 0}
+                        {stats.rating_distribution ? (stats.rating_distribution[rating.toString() as keyof typeof stats.rating_distribution] || 0) : 0}
                       </span>
                     </div>
                   ))}
@@ -182,6 +195,16 @@ export default function ClientReviewsPage() {
 
         {/* Filters and Sorting */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <select
+            value={reviewType}
+            onChange={(e) => setReviewType(e.target.value as any)}
+            className="px-3 py-2 bg-card border border-border rounded-lg text-foreground"
+          >
+            <option value="all">{locale === 'ar' ? 'جميع التقييمات' : 'All Reviews'}</option>
+            <option value="store">{locale === 'ar' ? 'تقييمات المتجر' : 'Store Reviews'}</option>
+            <option value="product">{locale === 'ar' ? 'تقييمات المنتجات' : 'Product Reviews'}</option>
+          </select>
+
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as any)}
@@ -237,11 +260,11 @@ export default function ClientReviewsPage() {
                   <div className="flex items-center">
                     <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
                       <span className="text-primary font-medium">
-                        {review.reviewer.name.charAt(0).toUpperCase()}
+                        {review.reviewer?.name?.charAt(0)?.toUpperCase() || 'U'}
                       </span>
                     </div>
-                    <div className="ml-3">
-                      <p className="font-medium text-foreground">{review.reviewer.name}</p>
+                    <div className="ml-3 rtl:ml-0 rtl:mr-3">
+                      <p className="font-medium text-foreground">{review.reviewer?.name || 'Unknown User'}</p>
                       <p className="text-sm text-muted-foreground">{formatDate(review.created_at)}</p>
                     </div>
                   </div>
@@ -250,29 +273,40 @@ export default function ClientReviewsPage() {
 
                 <p className="text-foreground mb-4 leading-relaxed">{review.comment}</p>
 
-                {review.product && (
-                  <div className="pt-4 border-t border-border/50">
-                    <Link
-                      href={`/products/${review.product.slug}`}
-                      className="inline-flex items-center text-sm text-primary hover:text-primary/80 transition-colors"
-                    >
-                      <span>{t('reviewed_product')}: {review.product.name}</span>
-                      <svg
-                        className="w-4 h-4 ml-1"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                        />
-                      </svg>
-                    </Link>
+                <div className="flex items-center justify-between pt-4 border-t border-border/50">
+                  <div className="flex items-center gap-2">
+                    {review.product ? (
+                      <>
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                          {locale === 'ar' ? 'تقييم منتج' : 'Product Review'}
+                        </span>
+                        <Link
+                          href={`/products/${review.product.slug}`}
+                          className="inline-flex items-center text-sm text-primary hover:text-primary/80 transition-colors"
+                        >
+                          <span>{review.product.name}</span>
+                          <svg
+                            className="w-4 h-4 ml-1 rtl:ml-0 rtl:mr-1"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                            />
+                          </svg>
+                        </Link>
+                      </>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                        {locale === 'ar' ? 'تقييم متجر' : 'Store Review'}
+                      </span>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
             ))}
 

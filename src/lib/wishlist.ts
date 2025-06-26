@@ -13,7 +13,7 @@ interface WishlistStore {
   hasFetched: boolean;
   
   // Actions
-  addToWishlist: (productId: number) => Promise<void>;
+  addToWishlist: (productId: number, product?: Product) => Promise<void>;
   removeFromWishlist: (productId: number) => Promise<void>;
   checkWishlist: (productId: number) => Promise<boolean>;
   fetchWishlist: () => Promise<void>;
@@ -41,8 +41,18 @@ export const useWishlist = create<WishlistStore>()(
             trackGTMAddToWishlist(product);
           }
           
-          // Refetch to update the store
-          await get().fetchWishlist();
+          // Add to local state immediately for better UX
+          if (product) {
+            const { items } = get();
+            const updatedItems = [...items, product];
+            set({ 
+              items: updatedItems,
+              count: updatedItems.length 
+            });
+          } else {
+            // If no product data provided, refetch to update the store
+            await get().fetchWishlist();
+          }
         } catch (error) {
           throw error;
         } finally {
