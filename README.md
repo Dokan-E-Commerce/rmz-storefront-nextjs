@@ -72,6 +72,17 @@ A professional Next.js storefront application built for the rmz.gg store front a
    # SDK Authentication Keys
    NEXT_PUBLIC_STOREFRONT_PUBLIC_KEY=your_public_key_here
    STOREFRONT_SECRET_KEY=your_secret_key_here
+   
+   
+   #Addons
+   
+   # Facebook Pixel Integration
+   # Add your Facebook Pixel ID to enable tracking
+   NEXT_PUBLIC_FACEBOOK_PIXEL_ID=
+   
+   # Google Tag Manager Integration
+   # Add your GTM Container ID to enable tracking
+   NEXT_PUBLIC_GTM_ID=
    ```
 
 3. **Start Development Server**
@@ -174,6 +185,14 @@ NEXT_PUBLIC_API_BASE_URL=https://front.rmz.gg/api
 # SDK Authentication
 NEXT_PUBLIC_STOREFRONT_PUBLIC_KEY=your_public_key
 STOREFRONT_SECRET_KEY=your_secret_key
+
+# Facebook Pixel Integration
+# Add your Facebook Pixel ID to enable tracking
+NEXT_PUBLIC_FACEBOOK_PIXEL_ID=
+
+# Google Tag Manager Integration
+# Add your GTM Container ID to enable tracking
+NEXT_PUBLIC_GTM_ID=
 
 # Node Environment
 NODE_ENV=production
