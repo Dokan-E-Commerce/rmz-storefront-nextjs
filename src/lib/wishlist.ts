@@ -2,11 +2,15 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { wishlistApi } from './store-api';
 import type { Product } from './types';
+import { devWarn } from './console-branding';
+import { trackAddToWishlist } from './facebook-pixel';
+import { trackGTMAddToWishlist } from './google-tag-manager';
 
 interface WishlistStore {
   items: Product[];
   count: number;
   isLoading: boolean;
+  hasFetched: boolean;
   
   // Actions
   addToWishlist: (productId: number) => Promise<void>;
@@ -15,6 +19,7 @@ interface WishlistStore {
   fetchWishlist: () => Promise<void>;
   clearWishlist: () => Promise<void>;
   isInWishlist: (productId: number) => boolean;
+  resetStore: () => void;
 }
 
 export const useWishlist = create<WishlistStore>()(
@@ -23,11 +28,19 @@ export const useWishlist = create<WishlistStore>()(
       items: [],
       count: 0,
       isLoading: false,
+      hasFetched: false,
 
-      addToWishlist: async (productId: number) => {
+      addToWishlist: async (productId: number, product?: Product) => {
         set({ isLoading: true });
         try {
           await wishlistApi.addItem(productId);
+          
+          // Track Facebook Pixel event if product data is available
+          if (product) {
+            trackAddToWishlist(product);
+            trackGTMAddToWishlist(product);
+          }
+          
           // Refetch to update the store
           await get().fetchWishlist();
         } catch (error) {
@@ -65,15 +78,62 @@ export const useWishlist = create<WishlistStore>()(
       },
 
       fetchWishlist: async () => {
+        const { isLoading, hasFetched } = get();
+        
+        // Prevent multiple simultaneous fetches
+        if (isLoading) {
+          return;
+        }
+        
         set({ isLoading: true });
         try {
           const data = await wishlistApi.get();
+          
+          // Temporary debug log to see actual response structure
+          console.log('Raw wishlist API response:', JSON.stringify(data, null, 2));
+          
+          // Handle different possible response structures
+          let items = [];
+          let count = 0;
+          
+          if (data) {
+            if (Array.isArray(data)) {
+              // Direct array response
+              items = data;
+              count = data.length;
+            } else if (data.data && Array.isArray(data.data)) {
+              // Response with data property
+              items = data.data;
+              count = data.count || data.data.length;
+            } else if (data.items && Array.isArray(data.items)) {
+              // Response with items property
+              items = data.items;
+              count = data.count || data.items.length;
+            } else if (data.products && Array.isArray(data.products)) {
+              // Response with products property
+              items = data.products;
+              count = data.count || data.products.length;
+            } else if (typeof data === 'object') {
+              // Check for any array property in the response
+              const possibleKeys = Object.keys(data);
+              for (const key of possibleKeys) {
+                if (Array.isArray(data[key]) && key !== 'errors') {
+                  items = data[key];
+                  count = data.count || items.length;
+                  break;
+                }
+              }
+            }
+          }
+          
           set({ 
-            items: data.data || [],
-            count: data.count || 0
+            items,
+            count,
+            hasFetched: true
           });
         } catch (error) {
-          set({ items: [], count: 0 });
+          devWarn('Failed to fetch wishlist:', error);
+          set({ items: [], count: 0, hasFetched: true });
         } finally {
           set({ isLoading: false });
         }
@@ -95,12 +155,21 @@ export const useWishlist = create<WishlistStore>()(
         const { items } = get();
         return items.some(item => item.id === productId);
       },
+
+      resetStore: () => {
+        set({ 
+          items: [], 
+          count: 0, 
+          hasFetched: false,
+          isLoading: false 
+        });
+      },
     }),
     {
       name: 'wishlist-storage',
       partialize: (state) => ({ 
         items: state.items,
-        count: state.count 
+        count: state.count
       }),
     }
   )

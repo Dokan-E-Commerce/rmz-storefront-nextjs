@@ -16,7 +16,8 @@ export interface StoreSSRData {
   timezone: string
   language: string
   status?: string
-  is_maintenance: number
+  is_maintenance: number | boolean | string
+  maintenance_message?: string
   theme: {
     color: string
     font_family: string

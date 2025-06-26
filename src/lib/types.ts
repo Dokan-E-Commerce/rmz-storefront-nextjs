@@ -449,4 +449,5 @@ export interface AuthResponse {
   customer?: Customer;
   requires_registration?: boolean;
   session_token?: string;
+  cart_token?: string;
 }

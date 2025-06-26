@@ -18,11 +18,22 @@ import {
 } from '@heroicons/react/24/solid';
 import { useCart } from '@/lib/cart';
 import { useTranslation } from '@/lib/useTranslation';
+import { useAuth } from '@/lib/auth';
+import { useModal } from '@/lib/modal';
 
 export default function MobileTabBar() {
   const pathname = usePathname();
   const { count } = useCart();
   const { t } = useTranslation();
+  const { isAuthenticated } = useAuth();
+  const { openAuthModal } = useModal();
+
+  const handleAccountClick = (e: React.MouseEvent) => {
+    if (!isAuthenticated) {
+      e.preventDefault();
+      openAuthModal();
+    }
+  };
 
   const tabs = [
     {
@@ -77,6 +88,7 @@ export default function MobileTabBar() {
             <Link
               key={tab.name}
               href={tab.href}
+              onClick={tab.name === t('account') ? handleAccountClick : undefined}
               className={`relative flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-200 ${
                 tab.isActive
                   ? 'bg-primary/10 scale-105'

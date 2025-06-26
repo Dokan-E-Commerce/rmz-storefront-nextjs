@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { sdk } from './sdk';
 import { Customer, AuthResponse } from './types';
+import { useWishlist } from './wishlist';
 
 interface AuthStore {
   customer: Customer | null;
@@ -53,6 +54,9 @@ export const useAuth = create<AuthStore>()(
         } catch (error) {
         }
         localStorage.removeItem('auth_token');
+        
+        // Clear wishlist data
+        useWishlist.getState().resetStore();
 
         // Clear the auth token from the SDK
         sdk.setAuthToken(null);

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { memo, useCallback } from 'react';
 import { useTranslation } from '@/lib/useTranslation';
 import { useAddToCart } from '@/hooks/useAddToCart';
 import { Button } from '@/components/ui/button';
@@ -41,7 +42,7 @@ interface ProductCardProps {
   className?: string;
 }
 
-export default function ProductCard({
+function ProductCard({
   product,
   variant = 'default',
   showAddToCart = true,
@@ -61,9 +62,9 @@ export default function ProductCard({
   const formattedActualPrice = formatPrice(actualPrice);
   const formattedOriginalPrice = hasDiscount ? formatPrice(originalPrice) : null;
 
-  const handleAddToCart = () => {
+  const handleAddToCart = useCallback(() => {
     addToCart(product, 1);
-  };
+  }, [addToCart, product]);
 
   const getCardClasses = () => {
     const baseClasses = "bg-card/80 backdrop-blur-sm rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden group border border-border/50 hover:border-primary/20 transform hover:-translate-y-2";
@@ -206,3 +207,5 @@ export default function ProductCard({
     </div>
   );
 }
+
+export default memo(ProductCard);

@@ -10,6 +10,10 @@ import { Toaster } from 'sonner';
 import { LanguageProvider } from '@/components/LanguageProvider';
 import { StoreProvider } from '@/components/StoreProvider';
 import { getStoreSSRData, generateStoreMetaTags, generateStoreStructuredData, getStoreFavicons } from '@/lib/ssr';
+import MaintenanceWrapper from '@/components/MaintenanceWrapper';
+import GlobalModals from '@/components/GlobalModals';
+import FacebookPixel from '@/components/FacebookPixel';
+import GoogleTagManager from '@/components/GoogleTagManager';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -99,10 +103,6 @@ export default async function RootLayout({
 
         {/* Preload critical resources */}
         <link
-          href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
-        <link
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
           rel="stylesheet"
           integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
@@ -138,24 +138,29 @@ export default async function RootLayout({
         <StoreProvider store={store}>
           <LanguageProvider initialLanguage={store?.language}>
             <Providers>
-              <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-muted/20 text-foreground relative overflow-hidden">
-                {/* Liquid Glass Background Pattern */}
-                <div className="fixed inset-0 opacity-30 dark:opacity-20">
-                  <div className="absolute top-0 -left-4 w-72 h-72 bg-primary/20 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
-                  <div className="absolute top-0 -right-4 w-72 h-72 bg-secondary/20 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
-                  <div className="absolute -bottom-8 left-20 w-72 h-72 bg-accent/20 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
-                </div>
+              <MaintenanceWrapper>
+                <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-muted/20 text-foreground relative overflow-hidden">
+                  {/* Liquid Glass Background Pattern */}
+                  <div className="fixed inset-0 opacity-30 dark:opacity-20">
+                    <div className="absolute top-0 -left-4 w-72 h-72 bg-primary/20 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
+                    <div className="absolute top-0 -right-4 w-72 h-72 bg-secondary/20 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
+                    <div className="absolute -bottom-8 left-20 w-72 h-72 bg-accent/20 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
+                  </div>
 
-                <div className="relative z-10 flex flex-col min-h-screen">
-                  <Header />
-                  <main className="flex-1 pb-20 sm:pb-0">
-                    {children}
-                  </main>
-                  <Footer />
-                  <MobileTabBar />
+                  <div className="relative z-10 flex flex-col min-h-screen">
+                    <Header />
+                    <main className="flex-1 pb-20 sm:pb-0">
+                      {children}
+                    </main>
+                    <Footer />
+                    <MobileTabBar />
+                  </div>
                 </div>
-              </div>
+              </MaintenanceWrapper>
               <Toaster />
+              <GlobalModals />
+              <FacebookPixel />
+              <GoogleTagManager />
             </Providers>
           </LanguageProvider>
         </StoreProvider>

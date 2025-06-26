@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useState } from 'react';
+import { Fragment, useState, useEffect } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,7 +8,9 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { OTPInput } from '@/components/ui/otp-input';
 import { authApi, useAuth } from '@/lib/auth';
+import { useCart } from '@/lib/cart';
 import { toast } from 'sonner';
+import { devLog, devWarn } from '@/lib/console-branding';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
@@ -43,6 +45,10 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
   const [phoneError, setPhoneError] = useState('');
   const [otpValue, setOtpValue] = useState('');
   const [sessionToken, setSessionToken] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [verificationAttempts, setVerificationAttempts] = useState(0);
+  const [otpSentTime, setOtpSentTime] = useState<number | null>(null);
+  const [verificationCooldown, setVerificationCooldown] = useState(0);
   const { setAuth } = useAuth();
 
   const otpForm = useForm<OTPFormData>({
@@ -60,6 +66,26 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
     },
   });
 
+  // Countdown timer effect for resend
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => {
+        setResendCooldown(resendCooldown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
+
+  // Countdown timer effect for verification attempts
+  useEffect(() => {
+    if (verificationCooldown > 0) {
+      const timer = setTimeout(() => {
+        setVerificationCooldown(verificationCooldown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [verificationCooldown]);
+
   const resetModal = () => {
     setStep('phone');
     setIsLoading(false);
@@ -68,6 +94,10 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
     setPhoneError('');
     setOtpValue('');
     setSessionToken('');
+    setResendCooldown(0);
+    setVerificationAttempts(0);
+    setOtpSentTime(null);
+    setVerificationCooldown(0);
     otpForm.reset();
     registrationForm.reset();
   };
@@ -107,7 +137,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
       const country_code = String(parsedPhone.countryCallingCode); // "966", "973", etc.
       const phone = String(parsedPhone.nationalNumber); // "50708824", etc.
 
-      console.log('Phone data being sent:', {
+      devLog('Phone data being sent:', {
         country_code,
         phone,
         original: phoneValue,
@@ -125,9 +155,12 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
       setSessionToken(sessionTokenValue);
       setPhoneNumber(phoneValue);
       setStep('otp');
+      setResendCooldown(30); // Start cooldown when OTP is sent
+      setOtpSentTime(Date.now()); // Track when OTP was sent
+      setVerificationAttempts(0); // Reset attempts for new OTP
       toast.success(t('verification_code_sent'));
     } catch (error: any) {
-      console.error('Phone submission error:', error);
+      devWarn('Phone submission error:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Failed to send verification code';
 
       toast.error(errorMessage);
@@ -139,13 +172,36 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
   };
 
   const onOTPSubmit = async (data: OTPFormData) => {
+    // Check if OTP has expired (5 minutes)
+    if (otpSentTime && Date.now() - otpSentTime > 5 * 60 * 1000) {
+      toast.error('Verification code has expired. Please request a new one.');
+      return;
+    }
+
+    // Check if too many verification attempts
+    if (verificationAttempts >= 3) {
+      toast.error('Too many failed attempts. Please request a new code.');
+      return;
+    }
+
+    // Check verification cooldown
+    if (verificationCooldown > 0) {
+      toast.error(`Please wait ${verificationCooldown} seconds before trying again.`);
+      return;
+    }
+
     setIsLoading(true);
     try {
 
       if (!sessionToken) {
         toast.error('Session token is missing. Please restart authentication.');
+        setIsLoading(false);
         return;
       }
+
+      // Ensure cart token is synced before authentication
+      const { syncCartToken } = useCart.getState();
+      syncCartToken();
 
       const response = await authApi.verifyOTP(data.otp, sessionToken);
 
@@ -154,7 +210,27 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
         setStep('registration');
         toast.info('Please complete your registration');
       } else if (response.type === 'authenticated' && response.token && response.customer) {
+        devLog('🔐 AuthModal: Authentication successful, cart_token:', response.cart_token?.substring(0, 10) + '...');
         setAuth(response.token, response.customer);
+
+        // Handle cart after authentication - preserve guest cart
+        const { cart_token: guestCartToken, fetchCart } = useCart.getState();
+        devLog('🔐 AuthModal: Guest cart token before auth:', guestCartToken?.substring(0, 10) + '...');
+        devLog('🔐 AuthModal: Auth response cart token:', response.cart_token?.substring(0, 10) + '...');
+        
+        // Keep using the guest cart token - the backend should merge carts server-side
+        // Don't overwrite the guest cart token with the auth response token
+        if (guestCartToken) {
+          devLog('🔐 AuthModal: Preserving guest cart token and fetching updated cart');
+          // Just fetch the cart - the backend should have merged it with the user's account
+          fetchCart().catch(devWarn);
+        } else if (response.cart_token) {
+          // Only set the auth cart token if we don't have a guest cart
+          const { setCartToken } = useCart.getState();
+          devLog('🔐 AuthModal: No guest cart, using auth response cart token');
+          setCartToken(response.cart_token);
+          fetchCart().catch(devWarn);
+        }
 
         setTimeout(() => {
           const authState = useAuth.getState();
@@ -167,6 +243,19 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
         toast.error('Authentication failed. Please try again.');
       }
     } catch (error: any) {
+      // Increment attempts and set cooldown
+      const newAttempts = verificationAttempts + 1;
+      setVerificationAttempts(newAttempts);
+      
+      // Set progressive cooldown based on attempts
+      if (newAttempts === 1) {
+        setVerificationCooldown(5); // 5 seconds after first failure
+      } else if (newAttempts === 2) {
+        setVerificationCooldown(10); // 10 seconds after second failure
+      } else if (newAttempts >= 3) {
+        setVerificationCooldown(30); // 30 seconds after third failure
+      }
+      
       toast.error(error.response?.data?.message || 'Invalid verification code');
     }
     setIsLoading(false);
@@ -174,7 +263,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
 
   const handleOtpComplete = async (otp: string) => {
     setOtpValue(otp);
-    if (otp.length === 4) {
+    if (otp.length === 4 && verificationCooldown === 0) {
       await onOTPSubmit({ otp });
     }
   };
@@ -182,9 +271,32 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
   const onRegistrationSubmit = async (data: RegistrationFormData) => {
     setIsLoading(true);
     try {
+      // Ensure cart token is synced before registration
+      const { syncCartToken } = useCart.getState();
+      syncCartToken();
+      
       const response = await authApi.completeRegistration(data as any, sessionToken);
       if (response.token && response.customer) {
+        devLog('🔐 AuthModal: Registration successful, cart_token:', response.cart_token?.substring(0, 10) + '...');
         setAuth(response.token, response.customer);
+        
+        // Handle cart after registration - preserve guest cart
+        const { cart_token: guestCartToken, fetchCart } = useCart.getState();
+        devLog('🔐 AuthModal: Guest cart token before registration:', guestCartToken?.substring(0, 10) + '...');
+        devLog('🔐 AuthModal: Registration response cart token:', response.cart_token?.substring(0, 10) + '...');
+        
+        // Keep using the guest cart token - the backend should merge carts server-side
+        if (guestCartToken) {
+          devLog('🔐 AuthModal: Preserving guest cart token and fetching updated cart');
+          fetchCart().catch(devWarn);
+        } else if (response.cart_token) {
+          // Only set the registration cart token if we don't have a guest cart
+          const { setCartToken } = useCart.getState();
+          devLog('🔐 AuthModal: No guest cart, using registration response cart token');
+          setCartToken(response.cart_token);
+          fetchCart().catch(devWarn);
+        }
+        
         toast.success(t('registration_successful'));
         handleClose();
         onSuccess?.();
@@ -201,10 +313,29 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
       return;
     }
 
+    if (resendCooldown > 0) {
+      return; // Prevent resend during cooldown
+    }
+
     try {
       await authApi.resendOTP(sessionToken);
+      
+      // Clear OTP input when new code is sent
+      setOtpValue('');
+      otpForm.setValue('otp', '');
+      
+      // Reset verification attempts and update OTP sent time
+      setVerificationAttempts(0);
+      setVerificationCooldown(0);
+      setOtpSentTime(Date.now());
+      
       toast.success('Verification code resent');
+      setResendCooldown(30); // Set 30 second cooldown
     } catch (error: any) {
+      // If we get 429 error, still set cooldown
+      if (error.response?.status === 429) {
+        setResendCooldown(30);
+      }
       toast.error(error.response?.data?.message || 'Failed to resend code');
     }
   };
@@ -273,6 +404,32 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                         international
                         countryCallingCodeEditable={false}
                         defaultCountry="SA"
+                        countries={[
+                          // GCC Countries (First)
+                          'SA', // Saudi Arabia
+                          'AE', // United Arab Emirates
+                          'KW', // Kuwait
+                          'QA', // Qatar
+                          'BH', // Bahrain
+                          'OM', // Oman
+                          // Other Arab Countries
+                          'EG', // Egypt
+                          'JO', // Jordan
+                          'LB', // Lebanon
+                          'IQ', // Iraq
+                          'YE', // Yemen
+                          'SY', // Syria
+                          'PS', // Palestine
+                          'MA', // Morocco
+                          'DZ', // Algeria
+                          'TN', // Tunisia
+                          'LY', // Libya
+                          'SD', // Sudan
+                          'MR', // Mauritania
+                          'DJ', // Djibouti
+                          'SO', // Somalia
+                          'KM', // Comoros
+                        ]}
                         value={phoneValue}
                         onChange={handlePhoneChange}
                         className="phone-input w-full"
@@ -298,7 +455,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                   <div>
                     <p className="text-muted-foreground text-center mb-6">
                       {t('verification_code_sent')} <br />
-                      <span className="font-medium text-foreground">{phoneNumber}</span>
+                      <span className="font-medium text-foreground">{phoneNumber || phoneValue || 'No phone number found'}</span>
                     </p>
                     <div className="space-y-6">
                       <div>
@@ -311,7 +468,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                           onChange={setOtpValue}
                           onComplete={handleOtpComplete}
                           autoFocus
-                          disabled={isLoading}
+                          disabled={isLoading || verificationCooldown > 0}
                           className="mb-4"
                         />
                         {otpForm.formState.errors.otp && (
@@ -322,9 +479,11 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                       <Button
                         onClick={() => handleOtpComplete(otpValue)}
                         className="w-full bg-primary/90 hover:bg-primary backdrop-blur-sm"
-                        disabled={isLoading || otpValue.length !== 4}
+                        disabled={isLoading || otpValue.length !== 4 || verificationCooldown > 0}
                       >
-                        {isLoading ? t('verifying') : t('verify_code')}
+                        {isLoading ? t('verifying') : 
+                         verificationCooldown > 0 ? `${t('verify_code')} (${verificationCooldown}s)` :
+                         t('verify_code')}
                       </Button>
 
                       <div className="flex justify-between text-sm">
@@ -338,9 +497,17 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                         <button
                           type="button"
                           onClick={resendOTP}
-                          className="text-primary hover:text-primary/80 font-medium transition-colors"
+                          disabled={resendCooldown > 0}
+                          className={`font-medium transition-colors ${
+                            resendCooldown > 0 
+                              ? 'text-muted-foreground cursor-not-allowed' 
+                              : 'text-primary hover:text-primary/80 cursor-pointer'
+                          }`}
                         >
-                          {t('resend_code')}
+                          {resendCooldown > 0 
+                            ? `${t('resend_code')} (${resendCooldown}s)` 
+                            : t('resend_code')
+                          }
                         </button>
                       </div>
                     </div>

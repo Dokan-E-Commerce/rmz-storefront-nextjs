@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import type { Product, Review, SubscriptionVariant } from '@/lib/types';
 import { useTranslation } from '@/lib/useTranslation';
 import { useLanguage } from '@/components/LanguageProvider';
+import { useModal } from '@/lib/modal';
 
 interface ClientProductPageProps {
   slug: string
@@ -30,13 +31,30 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const { isAuthenticated } = useAuth();
   const { selectedCurrency, formatPrice } = useCurrency();
+  const { openAuthModal } = useModal();
 
   const [quantity, setQuantity] = useState(1);
+  const [isHydrated, setIsHydrated] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState<SubscriptionVariant | null>(null);
   const [customFields, setCustomFields] = useState<{ [key: string]: string }>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
   const [isQuickPurchasing, setIsQuickPurchasing] = useState(false);
+
+  // Track hydration to prevent SSR mismatch
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+
+  // Safe price formatting that handles SSR
+  const formatPriceSafe = (price: number | string) => {
+    if (!isHydrated) {
+      // During SSR, use the default SAR formatting
+      const numericPrice = typeof price === 'string' ? parseFloat(price) : price;
+      return `ر.س${numericPrice.toFixed(2)}`;
+    }
+    return formatPrice(price);
+  };
 
   const { data: product, isLoading: productLoading, error } = useQuery({
     queryKey: ['product', slug],
@@ -52,8 +70,14 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
     hasNextPage,
     fetchNextPage,
   } = useInfiniteQuery({
-    queryKey: ['product-reviews', slug],
-    queryFn: ({ pageParam = 1 }) => sdk.reviews.getAll({ page: pageParam, per_page: 6 }),
+    queryKey: ['product-reviews', product?.id],
+    queryFn: ({ pageParam = 1 }) => {
+      if (!product?.id) return Promise.resolve({ data: [], pagination: { current_page: 1, last_page: 1 } });
+      return sdk.products.getReviews(product.id, { 
+        page: pageParam, 
+        per_page: 6
+      });
+    },
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
       if (lastPage.pagination.current_page < lastPage.pagination.last_page) {
@@ -61,15 +85,25 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
       }
       return undefined;
     },
-    enabled: !!slug,
+    enabled: !!product?.id,
   });
 
   const allReviews = useMemo(() => {
-    return reviewsData?.pages.flatMap(page => page.data) || [];
+    const reviews = reviewsData?.pages.flatMap(page => page.data) || [];
+    // Remove duplicates by keeping only the first occurrence of each review ID
+    const seen = new Set();
+    return reviews.filter(review => {
+      if (!review || !review.id) return false; // Skip invalid reviews
+      if (seen.has(review.id)) {
+        return false;
+      }
+      seen.add(review.id);
+      return true;
+    });
   }, [reviewsData]);
 
   const calculatedPrice = useMemo(() => {
-    if (!product) return { total: 0, formatted: formatPrice(0), basePrice: 0, fieldPriceAddition: 0, unitPrice: 0 };
+    if (!product) return { total: 0, formatted: formatPriceSafe(0), basePrice: 0, fieldPriceAddition: 0, unitPrice: 0 };
 
     let basePrice = Number(product.price.actual) || 0;
 
@@ -95,9 +129,9 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
       fieldPriceAddition: Number(fieldPriceAddition) || 0,
       unitPrice: Number(unitPrice) || 0,
       total: Number(totalPrice) || 0,
-      formatted: formatPrice(totalPrice)
+      formatted: formatPriceSafe(totalPrice)
     };
-  }, [product, selectedVariant, customFields, quantity, formatPrice]);
+  }, [product, selectedVariant, customFields, quantity, formatPriceSafe, isHydrated]);
 
   if (productLoading) {
     return (
@@ -192,12 +226,17 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
     }
   };
 
-  const averageRating = allReviews.length > 0 ?
-    allReviews.reduce((acc: number, review: any) => acc + (Number(review.rating) || 0), 0) / allReviews.length : 0;
+  // Get total review count from pagination data
+  const totalReviewCount = reviewsData?.pages?.[0]?.pagination?.total || 0;
+  
+  // Use product's overall rating if available, otherwise calculate from loaded reviews
+  const averageRating = product?.rating ? Number(product.rating) : 
+    (allReviews.length > 0 ?
+      allReviews.reduce((acc: number, review: any) => acc + (Number(review.rating) || 0), 0) / allReviews.length : 0);
 
   const handleQuickPurchase = async () => {
     if (!isAuthenticated) {
-      toast.error('Login required');
+      openAuthModal();
       return;
     }
 
@@ -206,9 +245,31 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
       await addItem(product, quantity, customFields, selectedVariant);
 
       try {
-        await checkoutApi.create();
-        router.push('/checkout');
+        const checkoutData = await checkoutApi.create();
+
+        // Handle different checkout responses (same logic as cart page)
+        if (checkoutData.type === 'free_order') {
+          // Free order - redirect to order page
+          toast.success(locale === 'ar' ? 'تم إنشاء الطلب بنجاح!' : 'Order created successfully!');
+          router.push(`/order/${checkoutData.order_id}`);
+        } else if (checkoutData.type === 'payment_required') {
+          // Payment required - redirect to payment page
+          if (checkoutData.redirect_url || checkoutData.checkout_url) {
+            window.location.href = checkoutData.redirect_url || checkoutData.checkout_url;
+          } else {
+            toast.error(locale === 'ar' ? 'خطأ في إنشاء رابط الدفع' : 'Error creating payment link');
+          }
+        } else {
+          // Handle generic response format (fallback)
+          if (checkoutData.checkout_url) {
+            window.location.href = checkoutData.checkout_url;
+          } else {
+            toast.success(locale === 'ar' ? 'تم إنشاء الطلب بنجاح!' : 'Order created successfully!');
+            router.push('/account');
+          }
+        }
       } catch (error) {
+        // If checkout fails, fallback to cart page
         router.push('/cart');
         return;
       }
@@ -274,9 +335,13 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
 
           <div className="space-y-6">
             <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">{product.marketing_title || product.name}</h1>
+              <h1 className="text-3xl font-bold text-foreground mb-2">{product.name}</h1>
               {product.marketing_title && product.marketing_title !== product.name && (
-                <p className="text-lg text-muted-foreground mb-2">{product.name}</p>
+                <div className="mb-3">
+                  <span className="inline-block px-4 py-2 bg-gradient-to-r from-primary/20 to-primary/10 text-primary border border-primary/30 rounded-full text-sm font-medium backdrop-blur-sm">
+                    ✨ {product.marketing_title}
+                  </span>
+                </div>
               )}
 
               <div className="flex items-center gap-3 mb-4 flex-wrap">
@@ -312,18 +377,6 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
                 )}
               </div>
 
-              {product.categories && product.categories.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {product.categories.map((category) => (
-                    <span
-                      key={category.id}
-                      className="px-3 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400 text-sm rounded-full"
-                    >
-                      {category.name}
-                    </span>
-                  ))}
-                </div>
-              )}
 
               {allReviews && allReviews.length > 0 && (
                 <div className="flex items-center space-x-2 mb-4">
@@ -339,7 +392,7 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
                     ))}
                   </div>
                   <span className="text-sm text-muted-foreground">
-                    {averageRating.toFixed(1)} ({allReviews.length} {locale === 'ar' ? 'مراجعة' : 'reviews'})
+                    {averageRating.toFixed(1)} ({totalReviewCount} {locale === 'ar' ? 'مراجعة' : 'reviews'})
                   </span>
                 </div>
               )}
@@ -351,7 +404,7 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
                   </span>
                   {product.price.discount && (
                     <span className="text-lg text-muted-foreground line-through">
-                      {product.price.original}
+                      {formatPriceSafe(product.price.original)}
                     </span>
                   )}
                 </div>
@@ -364,12 +417,12 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
                   <div className="text-sm text-muted-foreground mt-2">
                     {quantity > 1 && (
                       <span>
-                        {formatPrice(calculatedPrice.unitPrice)} {locale === 'ar' ? 'للقطعة' : 'each'} × {quantity}
+                        {formatPriceSafe(calculatedPrice.unitPrice)} {locale === 'ar' ? 'للقطعة' : 'each'} × {quantity}
                       </span>
                     )}
                     {calculatedPrice.fieldPriceAddition > 0 && (
                       <span className="block">
-                        + {formatPrice(calculatedPrice.fieldPriceAddition)} {locale === 'ar' ? 'للخيارات' : 'for options'}
+                        + {formatPriceSafe(calculatedPrice.fieldPriceAddition)} {locale === 'ar' ? 'للخيارات' : 'for options'}
                       </span>
                     )}
                   </div>
@@ -468,7 +521,7 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
               <label className="block text-sm font-medium text-foreground mb-2">
                 {locale === 'ar' ? 'الكمية' : 'Quantity'}
               </label>
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-3 rtl:space-x-reverse">
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
                   disabled={quantity <= 1}
@@ -508,7 +561,7 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
                 </Button>
                 <Button
                   onClick={handleQuickPurchase}
-                  disabled={isQuickPurchasing || (product.stock && !product.stock.unlimited && product.stock.available === 0) || !isAuthenticated}
+                  disabled={isQuickPurchasing || (product.stock && !product.stock.unlimited && product.stock.available === 0)}
                   className="bg-primary hover:bg-primary/90 h-12 rounded-lg shadow-lg"
                   size="lg"
                 >
@@ -521,14 +574,14 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
 
               <div className="grid grid-cols-2 gap-3">
                 <Button
-                  variant="outline"
+                  variant={isInWishlist(product.id) ? "default" : "outline"}
                   size="sm"
-                  className="h-10 rounded-lg"
+                  className={`h-10 rounded-lg ${isInWishlist(product.id) ? 'bg-red-500 hover:bg-red-600 text-white border-red-500' : ''}`}
                   onClick={handleWishlistToggle}
                   disabled={isWishlistLoading}
                 >
                   {isInWishlist(product.id) ? (
-                    <HeartSolidIcon className="h-4 w-4 mr-2 text-red-500" />
+                    <HeartSolidIcon className="h-4 w-4 mr-2 text-white" />
                   ) : (
                     <HeartIcon className="h-4 w-4 mr-2" />
                   )}
@@ -639,8 +692,8 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
                 </div>
               ) : allReviews.length > 0 ? (
                 <div className="space-y-6">
-                  {allReviews.map((review: any) => (
-                    <div key={review.id} className="border-b border-border pb-6 last:border-b-0">
+                  {allReviews.map((review: any, index: number) => (
+                    <div key={`review-${review.id || index}`} className="border-b border-border pb-6 last:border-b-0">
                       <div className="flex items-center space-x-4 mb-3">
                         <div className="flex">
                           {[1, 2, 3, 4, 5].map((star) => (

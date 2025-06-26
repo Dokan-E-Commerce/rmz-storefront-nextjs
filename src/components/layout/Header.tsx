@@ -67,6 +67,13 @@ export default function Header() {
     fetchCart();
   }, [fetchCart]);
 
+  // Re-fetch cart when authentication state changes
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchCart();
+    }
+  }, [isAuthenticated, fetchCart]);
+
   // Initialize currency from store data
   useEffect(() => {
     if (store?.currency) {
@@ -185,7 +192,7 @@ export default function Header() {
           </div>
 
           {/* Navigation */}
-          <nav className="hidden md:flex space-x-8">
+          <nav className="hidden md:flex space-x-8 rtl:space-x-reverse">
             <Link href="/" className="text-muted-foreground hover:text-foreground px-3 py-2 rounded-md text-sm font-medium transition-colors">
               {t('home')}
             </Link>
@@ -197,7 +204,7 @@ export default function Header() {
             <div className="relative" ref={categoriesRef}>
               <button
                 onClick={() => setIsCategoriesOpen(!isCategoriesOpen)}
-                className="flex items-center space-x-1 text-muted-foreground hover:text-foreground px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                className="flex items-center space-x-1 rtl:space-x-reverse text-muted-foreground hover:text-foreground px-3 py-2 rounded-md text-sm font-medium transition-colors"
               >
                 <span>{t('categories')}</span>
                 <ChevronDownIcon className={`h-4 w-4 transition-transform ${isCategoriesOpen ? 'rotate-180' : ''}`} />
@@ -286,7 +293,7 @@ export default function Header() {
                   <span className="hidden sm:block">{customer?.first_name}</span>
                 </button>
                 {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-card/90 backdrop-blur-md border border-border/50 rounded-md shadow-lg z-50">
+                  <div className="absolute rtl:left-0 ltr:right-0 mt-2 w-48 bg-card/90 backdrop-blur-md border border-border/50 rounded-md shadow-lg z-50">
                     <div className="py-1">
                       <Link
                         href="/account"
@@ -314,7 +321,7 @@ export default function Header() {
                           logout();
                           setIsUserMenuOpen(false);
                         }}
-                        className="block w-full text-left px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                        className="block px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
                       >
                         {t('logout')}
                       </button>
@@ -382,13 +389,13 @@ export default function Header() {
                     {/* User Section */}
                     {isAuthenticated ? (
                       <div className="space-y-3">
-                        <div className="flex items-center space-x-3 p-3 bg-muted/30 rounded-lg">
+                        <div className="flex items-center space-x-3 rtl:space-x-reverse p-3 bg-muted/30 rounded-lg">
                           <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
                             <UserIcon className="h-6 w-6 text-primary" />
                           </div>
-                          <div>
+                          <div className="flex-1">
                             <p className="font-medium text-foreground">{customer?.first_name}</p>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-sm text-muted-foreground" dir="ltr">
                               {customer?.phone ? formatPhoneNumber(customer.phone, customer?.country_code) : customer?.email}
                             </p>
                           </div>
@@ -433,7 +440,7 @@ export default function Header() {
 
                     {/* Navigation */}
                     <div className="space-y-3">
-                      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Navigation</h3>
+                      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">{t('navigation')}</h3>
                       <div className="space-y-1">
                         <Link
                           href="/"
@@ -496,7 +503,7 @@ export default function Header() {
 
                     {/* Tools */}
                     <div className="space-y-3">
-                      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Tools</h3>
+                      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">{t('tools')}</h3>
                       <div className="space-y-4">
                         {/* Search */}
                         <button
@@ -504,7 +511,7 @@ export default function Header() {
                             setIsSearchModalOpen(true);
                             setIsMenuOpen(false);
                           }}
-                          className="flex items-center space-x-3 w-full px-3 py-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                          className="flex items-center space-x-3 rtl:space-x-reverse w-full px-3 py-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
                         >
                           <MagnifyingGlassIcon className="h-5 w-5" />
                           <span>{t('search')}</span>
@@ -522,7 +529,7 @@ export default function Header() {
 
                         {/* Theme Toggle */}
                         <div className="flex items-center justify-between px-3">
-                          <span className="text-sm text-muted-foreground">Theme</span>
+                          <span className="text-sm text-muted-foreground">{t('theme')}</span>
                           <ThemeToggle />
                         </div>
                       </div>
@@ -536,7 +543,7 @@ export default function Header() {
                             logout();
                             setIsMenuOpen(false);
                           }}
-                          className="block w-full px-3 py-2 rounded-md text-left text-sm font-medium text-red-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                          className="block w-full px-3 py-2 rounded-md text-left rtl:text-right text-sm font-medium text-red-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                         >
                           {t('logout')}
                         </button>

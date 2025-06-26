@@ -20,6 +20,9 @@ const translations = {
     register: 'Register',
     menu: 'Menu',
     search: 'Search',
+    navigation: 'Navigation',
+    tools: 'Tools',
+    theme: 'Theme',
     view: 'View',
 
     // Common actions
@@ -92,6 +95,7 @@ const translations = {
     order_summary: 'Order Summary',
     proceed_to_checkout: 'Proceed to Checkout',
     clear_cart: 'Clear Cart',
+    clear_all: 'Clear All',
     cart_total: 'Cart Total',
 
     // Account page
@@ -280,6 +284,8 @@ const translations = {
     are_you_sure_clear_wishlist: 'Are you sure you want to clear your wishlist?',
     wishlist_cleared: 'Wishlist cleared',
     login_to_view_wishlist: 'Please login to view your wishlist',
+    wishlist_empty: 'Your wishlist is empty',
+    start_adding_products: 'Start adding products you love to your wishlist',
     item: 'item',
     items: 'items',
 
@@ -301,13 +307,39 @@ const translations = {
     complete_profile: 'Complete your profile to finish registration',
     email_address: 'Email Address',
     creating_account: 'Creating Account...',
-    complete_registration_button: 'Complete Registration'
+    complete_registration_button: 'Complete Registration',
+
+    // Pages
+    pages: 'Pages',
+    browse_all_pages: 'Browse all pages and content',
+    no_pages_available: 'No pages available',
+    check_back_later_for_new_pages: 'Check back later for new pages',
+
+    // Reviews page
+    error_loading_reviews: 'Error loading reviews',
+    based_on_reviews: 'Based on {count} reviews',
+    all_ratings: 'All Ratings',
+    no_reviews_yet: 'No reviews yet',
+    be_first_to_review: 'Be the first to review our products',
+    browse_products: 'Browse Products',
+    load_more_reviews: 'Load More Reviews',
+    reviewed_product: 'Reviewed product',
+    highest_rated: 'Highest Rated',
+    lowest_rated: 'Lowest Rated',
+
+    // Maintenance Mode
+    maintenance_title: 'Maintenance Mode',
+    maintenance_reason_title: 'Maintenance Reason',
+    maintenance_estimated_time: 'Estimated Completion Time',
+    maintenance_contact: 'If you need immediate assistance, please contact us:',
+    maintenance_description: 'We are currently performing scheduled maintenance to improve your shopping experience. Please check back in a few moments.',
+    maintenance_refresh: 'Check Again'
   },
   ar: {
     // Navigation
     home: 'الرئيسية',
     products: 'المنتجات',
-    categories: 'الفئات',
+    categories: 'الأقسام',
     about: 'حولنا',
     contact: 'اتصل بنا',
     cart: 'السلة',
@@ -321,6 +353,9 @@ const translations = {
     register: 'التسجيل',
     menu: 'القائمة',
     search: 'البحث',
+    navigation: 'التنقل',
+    tools: 'الأدوات',
+    theme: 'المظهر',
     view: 'عرض',
 
     // Common actions
@@ -393,6 +428,7 @@ const translations = {
     order_summary: 'ملخص الطلب',
     proceed_to_checkout: 'متابعة للدفع',
     clear_cart: 'إفراغ السلة',
+    clear_all: 'مسح الجميع',
     cart_total: 'إجمالي السلة',
 
     // Account page
@@ -581,6 +617,8 @@ const translations = {
     are_you_sure_clear_wishlist: 'هل أنت متأكد من أنك تريد مسح قائمة المفضلة؟',
     wishlist_cleared: 'تم مسح قائمة المفضلة',
     login_to_view_wishlist: 'يرجى تسجيل الدخول لعرض قائمة المفضلة',
+    wishlist_empty: 'قائمة المفضلة فارغة',
+    start_adding_products: 'ابدأ بإضافة المنتجات التي تحبها إلى قائمة المفضلة',
     item: 'عنصر',
     items: 'عناصر',
 
@@ -602,7 +640,33 @@ const translations = {
     complete_profile: 'أكمل ملفك الشخصي لإنهاء التسجيل',
     email_address: 'عنوان البريد الإلكتروني',
     creating_account: 'جاري إنشاء الحساب...',
-    complete_registration_button: 'إكمال التسجيل'
+    complete_registration_button: 'إكمال التسجيل',
+
+    // Pages
+    pages: 'الصفحات',
+    browse_all_pages: 'تصفح جميع الصفحات والمحتوى',
+    no_pages_available: 'لا توجد صفحات متاحة',
+    check_back_later_for_new_pages: 'تحقق مرة أخرى لاحقاً للصفحات الجديدة',
+
+    // Reviews page
+    error_loading_reviews: 'خطأ في تحميل التقييمات',
+    based_on_reviews: 'بناءً على {count} تقييم',
+    all_ratings: 'جميع التقييمات',
+    no_reviews_yet: 'لا توجد تقييمات بعد',
+    be_first_to_review: 'كن أول من يقيم منتجاتنا',
+    browse_products: 'تصفح المنتجات',
+    load_more_reviews: 'تحميل المزيد من التقييمات',
+    reviewed_product: 'المنتج المقيم',
+    highest_rated: 'أعلى تقييم',
+    lowest_rated: 'أقل تقييم',
+
+    // Maintenance Mode
+    maintenance_title: 'وضع الصيانة',
+    maintenance_reason_title: 'سبب الصيانة',
+    maintenance_estimated_time: 'الوقت المقدر للانتهاء',
+    maintenance_contact: 'إذا كنت بحاجة إلى مساعدة فورية، يرجى الاتصال بنا:',
+    maintenance_description: 'نحن نقوم حالياً بصيانة مجدولة لتحسين تجربة التسوق الخاصة بك. يرجى العودة خلال لحظات.',
+    maintenance_refresh: 'تحقق مرة أخرى'
   }
 };
 
