@@ -9,9 +9,11 @@ import { Button } from '@/components/ui/button';
 import { ShoppingBagIcon, EyeIcon } from '@heroicons/react/24/outline';
 import AuthModal from '@/components/auth/AuthModal';
 import AccountLayout from '@/components/layout/AccountLayout';
+import { useLanguage } from '@/components/LanguageProvider';
 
 export default function OrdersPage() {
   const { isAuthenticated, customer } = useAuth();
+  const { locale } = useLanguage();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const { data: orders, isLoading, error } = useQuery({
@@ -52,8 +54,12 @@ export default function OrdersPage() {
       <AccountLayout>
         <div className="bg-card/30 backdrop-blur-md border border-border/50 rounded-xl shadow-xl p-6">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-foreground mb-2">Error</h1>
-            <p className="text-muted-foreground">Server Error</p>
+            <h1 className="text-2xl font-bold text-foreground mb-2">
+              {locale === 'ar' ? 'خطأ' : 'Error'}
+            </h1>
+            <p className="text-muted-foreground">
+              {locale === 'ar' ? 'خطأ في الخادم' : 'Server Error'}
+            </p>
           </div>
         </div>
       </AccountLayout>
@@ -65,9 +71,9 @@ export default function OrdersPage() {
       <div className="bg-card/30 backdrop-blur-md border border-border/50 rounded-xl shadow-xl p-6">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center">
-            <ShoppingBagIcon className="h-8 w-8 text-primary mr-3" />
+            <ShoppingBagIcon className={`h-8 w-8 text-primary ${locale === 'ar' ? 'ml-3' : 'mr-3'}`} />
             <h1 className="text-3xl font-bold text-foreground">
-              Orders ({orders?.data?.length || 0})
+              {locale === 'ar' ? 'الطلبات' : 'Orders'} ({orders?.data?.length || 0})
             </h1>
           </div>
         </div>
@@ -75,11 +81,15 @@ export default function OrdersPage() {
         {!orders?.data || orders.data.length === 0 ? (
           <div className="text-center py-16">
             <ShoppingBagIcon className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h2 className="text-xl font-medium text-foreground mb-2">No Orders Found</h2>
-            <p className="text-muted-foreground mb-6">You haven't placed any orders yet</p>
+            <h2 className="text-xl font-medium text-foreground mb-2">
+              {locale === 'ar' ? 'لا توجد طلبات' : 'No Orders Found'}
+            </h2>
+            <p className="text-muted-foreground mb-6">
+              {locale === 'ar' ? 'لم تقم بتقديم أي طلبات بعد' : 'You haven\'t placed any orders yet'}
+            </p>
             <Link href="/products">
               <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                Browse Products
+                {locale === 'ar' ? 'تصفح المنتجات' : 'Browse Products'}
               </Button>
             </Link>
           </div>
@@ -91,10 +101,10 @@ export default function OrdersPage() {
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-foreground">
-                        Order #{order.id}
+                        {locale === 'ar' ? 'طلب #' : 'Order #'}{order.id}
                       </h3>
                       <p className="text-sm text-muted-foreground">
-                        Placed on {new Date(order.created_at).toLocaleDateString()}
+                        {locale === 'ar' ? 'تم الطلب في ' : 'Placed on '}{new Date(order.created_at).toLocaleDateString(locale === 'ar' ? 'ar-SA' : 'en-US')}
                       </p>
                     </div>
                     <div className="flex flex-col sm:text-right gap-2">
@@ -142,14 +152,14 @@ export default function OrdersPage() {
                                  {item.product_name || item.name}
                                </div>
                               <div className="text-muted-foreground text-xs">
-                                Quantity: {item.quantity}
+                                {locale === 'ar' ? 'الكمية: ' : 'Quantity: '}{item.quantity}
                               </div>
                             </div>
                           </div>
                         ))}
                         {order.items.length > 3 && (
                           <div className="text-sm text-muted-foreground flex-shrink-0 bg-muted/20 rounded-lg px-3 py-2">
-                            +{order.items.length - 3} more
+                            +{order.items.length - 3} {locale === 'ar' ? 'أكثر' : 'more'}
                           </div>
                         )}
                       </div>
@@ -158,12 +168,15 @@ export default function OrdersPage() {
 
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div className="text-sm text-muted-foreground">
-                      {order.items?.length || 0} {order.items?.length === 1 ? 'item' : 'items'}
+                      {order.items?.length || 0} {locale === 'ar' ? 
+                        (order.items?.length === 1 ? 'منتج' : 'منتجات') : 
+                        (order.items?.length === 1 ? 'item' : 'items')
+                      }
                     </div>
                     <Link href={`/order/${order.id}`}>
                       <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                        <EyeIcon className="h-4 w-4 mr-2" />
-                        View Details
+                        <EyeIcon className={`h-4 w-4 ${locale === 'ar' ? 'ml-2' : 'mr-2'}`} />
+                        {locale === 'ar' ? 'عرض التفاصيل' : 'View Details'}
                       </Button>
                     </Link>
                   </div>
