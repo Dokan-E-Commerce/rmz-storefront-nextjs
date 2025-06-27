@@ -3,10 +3,12 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { memo, useCallback, useState } from 'react';
+import { motion } from 'framer-motion';
 import { useTranslation } from '@/lib/useTranslation';
 import { useAddToCart } from '@/hooks/useAddToCart';
 import { Button } from '@/components/ui/button';
 import { useCurrency } from '@/lib/currency';
+import { cardVariants, buttonVariants, scaleVariants } from '@/lib/animations';
 
 interface Product {
   id: number;
@@ -92,7 +94,15 @@ function ProductCard({
   };
 
   return (
-    <div className={`${getCardClasses()} ${className}`}>
+    <motion.div 
+      className={`${getCardClasses()} ${className}`}
+      variants={cardVariants}
+      initial="hidden"
+      animate="visible"
+      whileHover="hover"
+      whileTap="tap"
+      layout
+    >
       {/* Product Image */}
       <Link href={`/products/${product.slug}`} className="block relative">
         <div className={`relative w-full ${getImageHeight()} bg-gradient-to-br from-muted/30 to-muted/50`}>
@@ -181,12 +191,19 @@ function ProductCard({
 
         {/* Add to Cart Button */}
         {showAddToCart && (
-          <Button
-            onClick={handleAddToCart}
-            disabled={isAddingToCart(product.id)}
-            className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 text-white font-semibold py-3 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5"
-            size="sm"
+          <motion.div
+            variants={scaleVariants}
+            initial="hidden"
+            animate="visible"
+            whileHover="visible"
+            whileTap="exit"
           >
+            <Button
+              onClick={handleAddToCart}
+              disabled={isAddingToCart(product.id)}
+              className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 text-white font-semibold py-3 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5"
+              size="sm"
+            >
             {isAddingToCart(product.id) ? (
               <div className="flex items-center justify-center">
                 <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -203,10 +220,11 @@ function ProductCard({
                 {t('addToCart')}
               </div>
             )}
-          </Button>
+            </Button>
+          </motion.div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }
 

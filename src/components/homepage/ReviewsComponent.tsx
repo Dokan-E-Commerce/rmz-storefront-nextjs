@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/components/LanguageProvider';
 import { useTranslation } from '@/lib/useTranslation';
 import Link from 'next/link';
+import { staggerContainer, fadeInUp, scaleVariants } from '@/lib/animations';
 
 interface Review {
   id: number;
@@ -48,7 +49,6 @@ export default function ReviewsComponent({ className = '' }: ReviewsComponentPro
         // Filter to show only store reviews (reviews without product)
         return allReviews.filter((review: any) => !review.product);
       } catch (error) {
-        console.warn('Failed to fetch reviews:', error);
         return [];
       }
     },
@@ -138,19 +138,36 @@ export default function ReviewsComponent({ className = '' }: ReviewsComponentPro
   };
 
   return (
-    <section className={`py-16 bg-background ${className}`}>
+    <motion.section 
+      className={`py-16 bg-background ${className}`}
+      variants={fadeInUp}
+      initial="hidden"
+      animate="visible"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold tracking-tight text-foreground mb-4">
+        <motion.div 
+          className="text-center mb-12"
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+        >
+          <motion.h2 
+            className="text-3xl font-bold tracking-tight text-foreground mb-4"
+            variants={fadeInUp}
+          >
             {t('customer_reviews')}
-          </h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
+          </motion.h2>
+          <motion.p 
+            className="text-muted-foreground max-w-2xl mx-auto"
+            variants={fadeInUp}
+            transition={{ delay: 0.2 }}
+          >
             {locale === 'ar' 
               ? 'اكتشف تجارب العملاء الحقيقية مع منتجاتنا وخدماتنا'
               : 'Discover genuine customer experiences with our products and services'
             }
-          </p>
-        </div>
+          </motion.p>
+        </motion.div>
 
         <div className="relative">
           {/* Navigation Buttons */}
@@ -280,9 +297,14 @@ export default function ReviewsComponent({ className = '' }: ReviewsComponentPro
 
           {/* Dots Indicator */}
           {totalSlides > 1 && (
-            <div className="flex justify-center space-x-2 rtl:space-x-reverse mt-8">
+            <motion.div 
+              className="flex justify-center space-x-2 rtl:space-x-reverse mt-8"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+            >
               {Array.from({ length: totalSlides }).map((_, i) => (
-                <button
+                <motion.button
                   key={i}
                   className={`transition-all duration-300 ${
                     i === currentSlide 
@@ -290,21 +312,34 @@ export default function ReviewsComponent({ className = '' }: ReviewsComponentPro
                       : 'w-2 h-2 bg-muted rounded-full hover:bg-muted-foreground/50'
                   }`}
                   onClick={() => setCurrentSlide(i)}
+                  whileHover={{ scale: 1.2 }}
+                  whileTap={{ scale: 0.9 }}
+                  animate={{ scale: i === currentSlide ? 1.1 : 1 }}
                 />
               ))}
-            </div>
+            </motion.div>
           )}
 
           {/* View More Link */}
-          <div className="text-center mt-8">
+          <motion.div 
+            className="text-center mt-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+          >
             <Link href="/reviews">
-              <Button variant="outline" className="px-6 py-2">
-                {locale === 'ar' ? 'عرض جميع التقييمات' : 'View All Reviews'}
-              </Button>
+              <motion.div
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Button variant="outline" className="px-6 py-2">
+                  {locale === 'ar' ? 'عرض جميع التقييمات' : 'View All Reviews'}
+                </Button>
+              </motion.div>
             </Link>
-          </div>
+          </motion.div>
         </div>
       </div>
-    </section>
+    </motion.section>
   );
 }

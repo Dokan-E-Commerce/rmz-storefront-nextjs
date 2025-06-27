@@ -197,6 +197,21 @@
     transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
   }
 
+  /* Hide scrollbar while maintaining functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Safari and Chrome */
+  }
+
+  /* Smooth scrolling for horizontal containers */
+  .scroll-smooth {
+    scroll-behavior: smooth;
+  }
+
   /* Phone Input Styles */
   .phone-input .PhoneInputInput {
     @apply w-full px-3 py-2 bg-background/50 backdrop-blur-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring transition-all text-foreground;

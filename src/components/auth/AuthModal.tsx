@@ -1,7 +1,7 @@
 'use client';
 
 import { Fragment, useState, useEffect } from 'react';
-import { Dialog, Transition } from '@headlessui/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -16,6 +16,7 @@ import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import { useTranslation } from '@/lib/useTranslation';
 import { parsePhoneNumber, isValidPhoneNumber } from 'libphonenumber-js';
+import { modalVariants, backdropVariants, scaleVariants } from '@/lib/animations';
 
 const otpSchema = z.object({
   otp: z.string().min(4, 'OTP is required'),
@@ -358,39 +359,34 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
   };
 
   return (
-    <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={handleClose}>
-        <Transition.Child
-          as={Fragment}
-          enter="ease-out duration-300"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-200"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <div className="fixed inset-0 bg-black/20 backdrop-blur-sm" />
-        </Transition.Child>
+    <AnimatePresence>
+      {isOpen && (
+        <div className="relative z-50">
+          <motion.div
+            className="fixed inset-0 bg-black/20 backdrop-blur-sm"
+            variants={backdropVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            onClick={handleClose}
+          />
 
-        <div className="fixed inset-0 overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-4 text-center">
-            <Transition.Child
-              as={Fragment}
-              enter="ease-out duration-300"
-              enterFrom="opacity-0 scale-95"
-              enterTo="opacity-100 scale-100"
-              leave="ease-in duration-200"
-              leaveFrom="opacity-100 scale-100"
-              leaveTo="opacity-0 scale-95"
-            >
-              {/* Force LTR direction for the entire modal */}
-              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-card/90 backdrop-blur-md border border-border/50 p-6 text-left align-middle shadow-xl transition-all" dir="ltr">
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <motion.div
+                className="w-full max-w-md transform overflow-hidden rounded-2xl bg-card/90 backdrop-blur-md border border-border/50 p-6 text-left align-middle shadow-xl"
+                variants={modalVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                dir="ltr"
+              >
                 <div className="flex items-center justify-between mb-6">
-                  <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-foreground">
+                  <h3 className="text-lg font-medium leading-6 text-foreground">
                     {step === 'phone' && t('login_or_register')}
                     {step === 'otp' && t('enter_verification_code')}
                     {step === 'registration' && t('complete_registration')}
-                  </Dialog.Title>
+                  </h3>
                   <button
                     onClick={handleClose}
                     className="text-muted-foreground hover:text-foreground transition-colors"
@@ -578,11 +574,11 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                     </form>
                   </div>
                 )}
-              </Dialog.Panel>
-            </Transition.Child>
+              </motion.div>
+            </div>
           </div>
         </div>
-      </Dialog>
-    </Transition>
+      )}
+    </AnimatePresence>
   );
 }

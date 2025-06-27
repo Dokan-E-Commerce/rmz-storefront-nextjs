@@ -87,7 +87,6 @@ export const useAuth = create<AuthStore>()(
             set({ customer, isLoading: false });
           } catch (error) {
             // Token might be invalid, logout
-            console.warn('Failed to fetch profile, logging out:', error);
             get().logout();
             set({ isLoading: false });
           }

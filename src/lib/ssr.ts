@@ -121,19 +121,12 @@ async function makeServerSideAPICall(endpoint: string, options: RequestInit = {}
 
   if (!response.ok) {
     const errorText = await response.text()
-    console.error('SSR API Error:', {
-      status: response.status,
-      statusText: response.statusText,
-      url: fullUrl,
-      error: errorText
-    })
-    throw new Error(`API call failed: ${response.status} ${response.statusText} - ${errorText}`)
+    throw new Error(`API call failed: ${response.status} ${response.statusText}`)
   }
 
   const data = await response.json()
   
   if (!data.success) {
-    console.error('SSR API Response Error:', data)
     throw new Error(`API returned error: ${data.message || 'Unknown error'}`)
   }
 
@@ -151,7 +144,6 @@ export const getStoreSSRData = cache(async (): Promise<StoreSSRData | null> => {
     console.log('Store data fetched successfully:', storeData?.name)
     return storeData as StoreSSRData
   } catch (error) {
-    console.error('Failed to fetch store data:', error)
     return getFallbackStoreData()
   }
 })

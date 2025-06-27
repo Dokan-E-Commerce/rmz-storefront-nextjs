@@ -250,8 +250,7 @@ export const pagesApi = {
       // Return null instead of throwing error to avoid 404s during refetches
       return null;
     } catch (error) {
-      // Log error but don't throw to prevent 404s during refetches
-      console.warn('Failed to fetch page:', slug, error);
+      // Silent fail to prevent 404s during refetches
       return null;
     }
   },
@@ -261,7 +260,7 @@ export const pagesApi = {
       const store = await sdk.store.get({ include: ['pages'] }) as any;
       return store.pages || [];
     } catch (error) {
-      console.warn('Failed to fetch pages:', error);
+      // Silent fail for graceful degradation
       return [];
     }
   }

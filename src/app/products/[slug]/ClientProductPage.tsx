@@ -17,6 +17,9 @@ import type { Product, Review, SubscriptionVariant } from '@/lib/types';
 import { useTranslation } from '@/lib/useTranslation';
 import { useLanguage } from '@/components/LanguageProvider';
 import { useModal } from '@/lib/modal';
+import { motion, AnimatePresence } from 'framer-motion';
+import { staggerContainer, fadeInUp, scaleVariants } from '@/lib/animations';
+// import PageTransition from '@/components/ui/PageTransition';
 
 interface ClientProductPageProps {
   slug: string
@@ -113,9 +116,8 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
   // Get total review count from pagination data
   const totalReviewCount = reviewsData?.pages?.[0]?.pagination?.total || 0;
 
-  // Calculate review stats using correct totals instead of just paginated data
+  // Calculate review stats - Note: rating distribution is based on loaded reviews only
   const reviewStats = useMemo(() => {
-    // Use the actual total count from pagination, not just loaded reviews
     const totalReviews = totalReviewCount;
     
     if (!totalReviews || totalReviews === 0) {
@@ -123,7 +125,8 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
         data: {
           total_reviews: 0,
           average_rating: 0,
-          rating_distribution: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 }
+          rating_distribution: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 },
+          loaded_reviews_count: 0
         }
       };
     }
@@ -133,7 +136,7 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
       (allReviews.length > 0 ?
         allReviews.reduce((acc, review) => acc + (Number(review.rating) || 0), 0) / allReviews.length : 0);
     
-    // Calculate rating distribution from loaded reviews only (this is approximate but better than nothing)
+    // Calculate rating distribution from loaded reviews only
     const ratingDistribution = allReviews.reduce((dist, review) => {
       const rating = review.rating?.toString() || '1';
       dist[rating] = (dist[rating] || 0) + 1;
@@ -144,7 +147,8 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
       data: {
         total_reviews: totalReviews,
         average_rating: productAverageRating,
-        rating_distribution: ratingDistribution
+        rating_distribution: ratingDistribution,
+        loaded_reviews_count: allReviews.length
       }
     };
   }, [allReviews, totalReviewCount, product?.rating]);
@@ -182,7 +186,12 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
 
   if (productLoading) {
     return (
-      <div className="min-h-screen bg-background">
+      <motion.div 
+        className="min-h-screen bg-background"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="animate-pulse">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -199,13 +208,18 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   if (error || !product) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <motion.div 
+        className="min-h-screen bg-background flex items-center justify-center"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
         <div className="text-center">
           <h1 className="text-2xl font-bold text-foreground mb-2">
             {locale === 'ar' ? 'المنتج غير موجود' : 'Product Not Found'}
@@ -214,7 +228,7 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
             {locale === 'ar' ? 'لم يتم العثور على المنتج المطلوب.' : 'The requested product could not be found.'}
           </p>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
@@ -274,6 +288,34 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
     }
   };
 
+  const handleShare = async () => {
+    if (!product) return;
+
+    const shareData = {
+      title: product.name,
+      text: product.description || `Check out ${product.name}`,
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+      } else {
+        // Fallback: copy URL to clipboard
+        await navigator.clipboard.writeText(window.location.href);
+        toast.success(locale === 'ar' ? 'تم نسخ الرابط' : 'Link copied to clipboard');
+      }
+    } catch (error) {
+      // If all else fails, try clipboard API
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        toast.success(locale === 'ar' ? 'تم نسخ الرابط' : 'Link copied to clipboard');
+      } catch (clipboardError) {
+        toast.error(locale === 'ar' ? 'فشل في المشاركة' : 'Failed to share');
+      }
+    }
+  };
+
   
   // Use product's overall rating if available, otherwise calculate from loaded reviews
   const averageRating = product?.rating ? Number(product.rating) : 
@@ -327,69 +369,151 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <motion.div 
+      className="min-h-screen bg-background"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-        <nav className="flex mb-8" aria-label="Breadcrumb">
-          <ol className="flex items-center space-x-4">
-            <li>
-              <a href="/" className="text-muted-foreground hover:text-foreground">
+        <motion.nav 
+          className="flex mb-8" 
+          aria-label="Breadcrumb"
+          variants={fadeInUp}
+          initial="hidden"
+          animate="visible"
+        >
+          <motion.ol 
+            className="flex items-center space-x-4"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
+            <motion.li variants={fadeInUp}>
+              <motion.a 
+                href="/" 
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
                 {locale === 'ar' ? 'الرئيسية' : 'Home'}
-              </a>
-            </li>
-            <li>
+              </motion.a>
+            </motion.li>
+            <motion.li variants={fadeInUp}>
               <span className="text-muted-foreground">/</span>
-            </li>
-            <li>
-              <a href="/products" className="text-muted-foreground hover:text-foreground">
+            </motion.li>
+            <motion.li variants={fadeInUp}>
+              <motion.a 
+                href="/products" 
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
                 {locale === 'ar' ? 'المنتجات' : 'Products'}
-              </a>
-            </li>
-            <li>
+              </motion.a>
+            </motion.li>
+            <motion.li variants={fadeInUp}>
               <span className="text-muted-foreground">/</span>
-            </li>
-            <li>
+            </motion.li>
+            <motion.li variants={fadeInUp}>
               <span className="text-foreground font-medium">{product.name}</span>
-            </li>
-          </ol>
-        </nav>
+            </motion.li>
+          </motion.ol>
+        </motion.nav>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8 lg:mb-12">
-          <div className="space-y-4">
-            <div className="aspect-square bg-card/30 backdrop-blur-md border border-border/50 rounded-lg overflow-hidden">
-              {(product.image?.full_link || product.image?.url || product.image?.path) && !imageLoadError ? (
-                <img
-                  src={product.image.full_link || product.image.url || `/storage/${product.image.path}${product.image.filename}`}
-                  alt={product.image.alt_text || product.name}
-                  className="w-full h-full object-cover"
-                  onError={() => setImageLoadError(true)}
-                />
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-muted/30 to-muted/50 border-2 border-dashed border-border/40">
-                  <svg
-                    className="w-24 h-24 text-muted-foreground/50 mb-4"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
+        <motion.div 
+          className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8 lg:mb-12"
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+        >
+          <motion.div 
+            className="space-y-4"
+            variants={fadeInUp}
+          >
+            <motion.div 
+              className="aspect-square bg-card/30 backdrop-blur-md border border-border/50 rounded-lg overflow-hidden"
+              whileHover={{ scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            >
+              <AnimatePresence mode="wait">
+                {(product.image?.full_link || product.image?.url || product.image?.path) && !imageLoadError ? (
+                  <motion.img
+                    key="product-image"
+                    src={product.image.full_link || product.image.url || `/storage/${product.image.path}${product.image.filename}`}
+                    alt={product.image.alt_text || product.name}
+                    className="w-full h-full object-cover"
+                    onError={() => setImageLoadError(true)}
+                    initial={{ opacity: 0, scale: 1.1 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.3 }}
+                  />
+                ) : (
+                  <motion.div 
+                    key="placeholder"
+                    className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-muted/30 to-muted/50 border-2 border-dashed border-border/40"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
                   >
-                    <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
-                  </svg>
-                  <span className="text-muted-foreground/70 text-center px-4">
-                    {t('no_image_placeholder')}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
+                    <motion.svg
+                      className="w-24 h-24 text-muted-foreground/50 mb-4"
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                      animate={{ scale: [1, 1.1, 1] }}
+                      transition={{ type: 'tween', ease: 'easeInOut', duration: 2, repeat: Infinity }}
+                    >
+                      <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                    </motion.svg>
+                    <motion.span 
+                      className="text-muted-foreground/70 text-center px-4"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 }}
+                    >
+                      {t('no_image_placeholder')}
+                    </motion.span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          </motion.div>
 
-          <div className="space-y-6">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">{product.name}</h1>
-              {product.marketing_title && product.marketing_title !== product.name && (
-                <div className="mb-3">
-                  <span className="inline-block px-4 py-2 bg-gradient-to-r from-primary/20 to-primary/10 text-primary border border-primary/30 rounded-full text-sm font-medium backdrop-blur-sm">
-                    ✨ {product.marketing_title}
-                  </span>
-                </div>
-              )}
+          <motion.div 
+            className="space-y-6"
+            variants={fadeInUp}
+          >
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              animate="visible"
+            >
+              <motion.h1 
+                className="text-3xl font-bold text-foreground mb-2"
+                variants={fadeInUp}
+              >
+                {product.name}
+              </motion.h1>
+              <AnimatePresence>
+                {product.marketing_title && product.marketing_title !== product.name && (
+                  <motion.div 
+                    className="mb-3"
+                    variants={fadeInUp}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                  >
+                    <motion.span 
+                      className="inline-block px-4 py-2 bg-gradient-to-r from-primary/20 to-primary/10 text-primary border border-primary/30 rounded-full text-sm font-medium backdrop-blur-sm"
+                      whileHover={{ scale: 1.05, y: -2 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                    >
+                      ✨ {product.marketing_title}
+                    </motion.span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               <div className="flex items-center gap-3 mb-4 flex-wrap">
                 {product.sales?.badge && typeof product.sales.badge === 'object' && (
@@ -475,7 +599,7 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
                   </div>
                 )}
               </div>
-            </div>
+            </motion.div>
 
             <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
               {product.type.charAt(0).toUpperCase() + product.type.slice(1)} {locale === 'ar' ? 'منتج' : 'Product'}
@@ -621,13 +745,13 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
 
               <div className="grid grid-cols-2 gap-3">
                 <Button
-                  variant={isInWishlist(product.id) ? "default" : "outline"}
+                  variant={isHydrated && isInWishlist(product.id) ? "default" : "outline"}
                   size="sm"
-                  className={`h-10 rounded-lg ${isInWishlist(product.id) ? 'bg-red-500 hover:bg-red-600 text-white border-red-500' : ''}`}
+                  className={`h-10 rounded-lg ${isHydrated && isInWishlist(product.id) ? 'bg-red-500 hover:bg-red-600 text-white border-red-500' : ''}`}
                   onClick={handleWishlistToggle}
                   disabled={isWishlistLoading}
                 >
-                  {isInWishlist(product.id) ? (
+                  {isHydrated && isInWishlist(product.id) ? (
                     <HeartSolidIcon className="h-4 w-4 mr-2 text-white" />
                   ) : (
                     <HeartIcon className="h-4 w-4 mr-2" />
@@ -635,19 +759,19 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
                   <span className="hidden sm:inline">
                     {isWishlistLoading ?
                       (locale === 'ar' ? 'جاري التحميل...' : 'Loading...') :
-                      isInWishlist(product.id) ?
+                      isHydrated && isInWishlist(product.id) ?
                         (locale === 'ar' ? 'إزالة من المفضلة' : 'Remove from Wishlist') :
                         (locale === 'ar' ? 'أضف للمفضلة' : 'Add to Wishlist')
                     }
                   </span>
                   <span className="sm:hidden">
-                    {isInWishlist(product.id) ?
+                    {isHydrated && isInWishlist(product.id) ?
                       (locale === 'ar' ? 'إزالة' : 'Remove') :
                       (locale === 'ar' ? 'المفضلة' : 'Wishlist')
                     }
                   </span>
                 </Button>
-                <Button variant="outline" size="sm" className="h-10 rounded-lg">
+                <Button variant="outline" size="sm" className="h-10 rounded-lg" onClick={handleShare}>
                   <ShareIcon className="h-4 w-4 mr-2" />
                   {locale === 'ar' ? 'مشاركة' : 'Share'}
                 </Button>
@@ -702,8 +826,8 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
                 )}
               </div>
             )}
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
@@ -767,8 +891,8 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
                               className="h-2 bg-yellow-400 rounded-full"
                               style={{
                                 width: `${
-                                  reviewStats.data.total_reviews > 0
-                                    ? ((reviewStats.data.rating_distribution[rating.toString()] || 0) / reviewStats.data.total_reviews) * 100
+                                  reviewStats.data.loaded_reviews_count > 0
+                                    ? ((reviewStats.data.rating_distribution[rating.toString()] || 0) / reviewStats.data.loaded_reviews_count) * 100
                                     : 0
                                 }%`,
                               }}
@@ -779,6 +903,14 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
                           </span>
                         </div>
                       ))}
+                      {reviewStats.data.loaded_reviews_count < reviewStats.data.total_reviews && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {locale === 'ar' ? 
+                            `* التوزيع بناءً على ${reviewStats.data.loaded_reviews_count} من أصل ${reviewStats.data.total_reviews} تقييم` :
+                            `* Distribution based on ${reviewStats.data.loaded_reviews_count} of ${reviewStats.data.total_reviews} reviews`
+                          }
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -894,6 +1026,6 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

@@ -99,9 +99,6 @@ export const useWishlist = create<WishlistStore>()(
         try {
           const data = await wishlistApi.get();
           
-          // Temporary debug log to see actual response structure
-          console.log('Raw wishlist API response:', JSON.stringify(data, null, 2));
-          
           // Handle different possible response structures
           let items = [];
           let count = 0;

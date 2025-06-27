@@ -111,9 +111,7 @@ export default function CartPage() {
         return;
       }
 
-      console.log('Creating checkout with cart count:', count, 'items:', Object.keys(items).length);
       const checkoutData = await checkoutApi.create();
-      console.log('Checkout response:', checkoutData);
 
 
       // Handle different checkout responses (matching legacy behavior)
@@ -402,7 +400,6 @@ export default function CartPage() {
             try {
               const updatedCart = await fetchCart();
               const itemCount = Object.keys(updatedCart?.items || {}).length;
-              console.log('Cart after login - count:', itemCount, 'cart data:', updatedCart);
               
               if (itemCount > 0) {
                 handleCheckout();
@@ -410,7 +407,6 @@ export default function CartPage() {
                 toast.error(locale === 'ar' ? 'السلة فارغة بعد تسجيل الدخول' : 'Cart is empty after login');
               }
             } catch (error) {
-              console.error('Error fetching cart after login:', error);
               toast.error(locale === 'ar' ? 'خطأ في تحديث السلة' : 'Error updating cart');
             }
           }, 1000);

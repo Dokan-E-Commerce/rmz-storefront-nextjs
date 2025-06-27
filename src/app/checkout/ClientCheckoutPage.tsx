@@ -63,7 +63,6 @@ function CheckoutResultContent() {
         const response = await sdk.checkout.getResult(checkoutId);
         return response;
       } catch (error: any) {
-        console.error('Checkout result error:', error);
         throw error;
       }
     },

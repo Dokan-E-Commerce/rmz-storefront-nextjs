@@ -9,6 +9,9 @@ import ProductListComponent from './ProductListComponent';
 import FeaturesComponent from './FeaturesComponent';
 import Link from 'next/link';
 import { PlusIcon, CogIcon } from '@heroicons/react/24/outline';
+import { motion, AnimatePresence } from 'framer-motion';
+import { pageVariants, staggerContainer, fadeInUp, scaleVariants } from '@/lib/animations';
+import PageTransition from '@/components/ui/PageTransition';
 
 interface Component {
   id: number;
@@ -32,43 +35,95 @@ export default function DynamicHomepage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        {/* Loading skeleton */}
-        <div className="space-y-8">
+      <PageTransition className="min-h-screen bg-background">
+        {/* Loading skeleton with smooth animations */}
+        <motion.div 
+          className="space-y-8"
+          variants={staggerContainer}
+          initial="hidden"
+          animate="visible"
+        >
           {[1, 2, 3].map((i) => (
-            <div key={i} className="animate-pulse">
+            <motion.div 
+              key={i} 
+              variants={fadeInUp}
+              className="animate-pulse"
+            >
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="h-8 bg-muted/50 rounded w-48 mb-6"></div>
+                <motion.div 
+                  className="h-8 bg-muted/50 rounded w-48 mb-6"
+                  animate={{ opacity: [0.3, 0.6, 0.3] }}
+                  transition={{ type: 'tween', ease: 'easeInOut', duration: 1.5, repeat: Infinity }}
+                />
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                   {[1, 2, 3, 4].map((j) => (
-                    <div key={j} className="bg-muted/50 rounded-2xl h-64"></div>
+                    <motion.div 
+                      key={j} 
+                      className="bg-muted/50 rounded-2xl h-64"
+                      animate={{ opacity: [0.3, 0.6, 0.3] }}
+                      transition={{ 
+                        type: 'tween',
+                        ease: 'easeInOut',
+                        duration: 1.5, 
+                        repeat: Infinity,
+                        delay: j * 0.1 
+                      }}
+                    />
                   ))}
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
-      </div>
+        </motion.div>
+      </PageTransition>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-red-500 mb-4">
+      <PageTransition className="min-h-screen bg-background flex items-center justify-center">
+        <motion.div 
+          className="text-center"
+          variants={scaleVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <motion.div 
+            className="text-red-500 mb-4"
+            animate={{ 
+              scale: [1, 1.1, 1],
+              rotate: [0, -5, 5, 0]
+            }}
+            transition={{ 
+              type: 'tween',
+              duration: 2,
+              repeat: Infinity,
+              repeatType: "reverse",
+              ease: "easeInOut"
+            }}
+          >
             <svg className="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
-          </div>
-          <h3 className="text-lg font-medium text-foreground mb-2">
+          </motion.div>
+          <motion.h3 
+            className="text-lg font-medium text-foreground mb-2"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
             {t('errorLoadingComponents')}
-          </h3>
-          <p className="text-muted-foreground">
+          </motion.h3>
+          <motion.p 
+            className="text-muted-foreground"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
             {t('pleaseRefreshPage')}
-          </p>
-        </div>
-      </div>
+          </motion.p>
+        </motion.div>
+      </PageTransition>
     );
   }
 
@@ -136,28 +191,83 @@ export default function DynamicHomepage() {
 
   if (!components || components.length === 0) {
     return (
-      <div className="min-h-screen bg-background">
+      <PageTransition className="min-h-screen bg-background">
         {/* Default components when no API components are available */}
-        <ReviewsComponent />
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <ReviewsComponent />
+        </motion.div>
         
         {/* Store Setup Message */}
-        <div className="py-16">
+        <motion.div 
+          className="py-16"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
           <div className="max-w-md mx-auto px-4 text-center">
-            <div className="text-gray-400 mb-6">
+            <motion.div 
+              className="text-gray-400 mb-6"
+              animate={{ 
+                scale: [1, 1.05, 1],
+                rotate: [0, 2, -2, 0]
+              }}
+              transition={{ 
+                type: 'tween',
+                duration: 3,
+                repeat: Infinity,
+                repeatType: "reverse",
+                ease: "easeInOut"
+              }}
+            >
               <svg className="h-20 w-20 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
               </svg>
-            </div>
-            <h1 className="text-2xl font-bold text-foreground mb-4">
+            </motion.div>
+            <motion.h1 
+              className="text-2xl font-bold text-foreground mb-4"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 }}
+            >
               {t('noContent')}
-            </h1>
-            <p className="text-muted-foreground mb-6 leading-relaxed">
+            </motion.h1>
+            <motion.p 
+              className="text-muted-foreground mb-6 leading-relaxed"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.9 }}
+            >
               {t('noContentDescription')}
-            </p>
+            </motion.p>
             
             {/* Store Management Link */}
-            <div className="bg-muted/50 rounded-2xl p-6">
-              <PlusIcon className="h-8 w-8 text-primary mx-auto mb-3" />
+            <motion.div 
+              className="bg-muted/50 rounded-2xl p-6"
+              variants={scaleVariants}
+              initial="hidden"
+              animate="visible"
+              transition={{ delay: 1.1 }}
+              whileHover={{ scale: 1.02, y: -2 }}
+            >
+              <motion.div
+                animate={{ 
+                  y: [0, -3, 0],
+                  rotate: [0, 5, -5, 0]
+                }}
+                transition={{ 
+                  type: 'tween',
+                  duration: 2,
+                  repeat: Infinity,
+                  repeatType: "reverse",
+                  ease: "easeInOut"
+                }}
+              >
+                <PlusIcon className="h-8 w-8 text-primary mx-auto mb-3" />
+              </motion.div>
               <h3 className="font-semibold text-foreground mb-2">
                 {t('storeOwner')}
               </h3>
@@ -171,10 +281,10 @@ export default function DynamicHomepage() {
                 <CogIcon className="h-4 w-4" />
                 <span>{t('manageStore')}</span>
               </Link>
-            </div>
+            </motion.div>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </PageTransition>
     );
   }
 
@@ -185,13 +295,32 @@ export default function DynamicHomepage() {
   const hasReviewsComponent = sortedComponents.some(component => component.type === 'reviews');
 
   return (
-    <div className="min-h-screen bg-background">
-      {sortedComponents.map(renderComponent)}
-      
-      {/* Always include reviews component if not already present */}
-      {!hasReviewsComponent && (
-        <ReviewsComponent />
-      )}
-    </div>
+    <PageTransition className="min-h-screen bg-background">
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+      >
+        {sortedComponents.map((component, index) => (
+          <motion.div
+            key={component.id}
+            variants={fadeInUp}
+            transition={{ delay: index * 0.1 }}
+          >
+            {renderComponent(component)}
+          </motion.div>
+        ))}
+        
+        {/* Always include reviews component if not already present */}
+        {!hasReviewsComponent && (
+          <motion.div
+            variants={fadeInUp}
+            transition={{ delay: sortedComponents.length * 0.1 }}
+          >
+            <ReviewsComponent />
+          </motion.div>
+        )}
+      </motion.div>
+    </PageTransition>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useInfiniteProducts } from '@/lib/useInfiniteProducts';
 import { Product } from '@/lib/types';
 import Link from 'next/link';
@@ -10,6 +11,7 @@ import ProductCard from '@/components/ui/ProductCard';
 import { useInView } from 'react-intersection-observer';
 import { useLanguage } from '@/components/LanguageProvider';
 import Breadcrumbs from '@/components/seo/Breadcrumbs';
+import { pageVariants, pageTransition, containerVariants, itemVariants, fadeVariants } from '@/lib/animations';
 
 export default function ClientProductsPage() {
   const { locale } = useLanguage();
@@ -109,7 +111,14 @@ export default function ClientProductsPage() {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <motion.div 
+      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+      variants={pageVariants}
+      initial="initial"
+      animate="in"
+      exit="out"
+      transition={pageTransition}
+    >
       {/* Breadcrumbs */}
       <Breadcrumbs items={breadcrumbItems} className="mb-6" />
       
@@ -155,11 +164,25 @@ export default function ClientProductsPage() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {allProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          <motion.div 
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            <AnimatePresence>
+              {allProducts.map((product, index) => (
+                <motion.div
+                  key={product.id}
+                  variants={itemVariants}
+                  layout
+                  custom={index}
+                >
+                  <ProductCard product={product} />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </motion.div>
 
           {/* Infinite scroll trigger */}
           <div ref={loadMoreRef} className="mt-12 flex justify-center">
@@ -196,13 +219,24 @@ export default function ClientProductsPage() {
       </div>
 
       {/* Desktop Filter Modal */}
-      {showFilters && (
-        <div className="fixed inset-0 z-50 hidden md:flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setShowFilters(false)}
-          />
-          <div className="relative bg-card backdrop-blur-lg border border-border rounded-xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col">
+      <AnimatePresence>
+        {showFilters && (
+          <div className="fixed inset-0 z-50 hidden md:flex items-center justify-center p-4">
+            <motion.div
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+              onClick={() => setShowFilters(false)}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            />
+            <motion.div 
+              className="relative bg-card backdrop-blur-lg border border-border rounded-xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col"
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            >
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-border">
               <h3 className="text-xl font-semibold text-foreground">
@@ -351,21 +385,33 @@ export default function ClientProductsPage() {
                 </Button>
               </div>
             </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
       {/* Mobile Filter Modal */}
-      {showFilters && (
-        <div className="fixed inset-0 z-50 md:hidden">
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setShowFilters(false)}
-          />
+      <AnimatePresence>
+        {showFilters && (
+          <div className="fixed inset-0 z-50 md:hidden">
+            {/* Backdrop */}
+            <motion.div
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+              onClick={() => setShowFilters(false)}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            />
 
-          {/* Modal */}
-          <div className="fixed bottom-0 left-0 right-0 bg-card backdrop-blur-lg border-t border-border rounded-t-2xl shadow-2xl transform transition-transform duration-300 ease-in-out">
+            {/* Modal */}
+            <motion.div 
+              className="fixed bottom-0 left-0 right-0 bg-card backdrop-blur-lg border-t border-border rounded-t-2xl shadow-2xl"
+              initial={{ y: "100%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "100%", opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            >
             <div className="flex flex-col max-h-[85vh] min-h-[50vh]">
               {/* Drag Handle */}
               <div className="flex justify-center pt-3 pb-2">
@@ -492,9 +538,10 @@ export default function ClientProductsPage() {
                 </div>
               </div>
             </div>
+            </motion.div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }

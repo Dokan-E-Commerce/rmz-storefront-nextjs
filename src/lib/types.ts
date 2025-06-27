@@ -54,6 +54,8 @@ export interface Product {
   is_new?: boolean;
   is_discounted?: boolean;
   show_reviews?: number;
+  rating?: number;
+  reviews_count?: number;
   price: {
     original: string;
     actual: string;

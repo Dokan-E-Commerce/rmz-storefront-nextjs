@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingCartIcon, UserIcon, Bars3Icon, XMarkIcon, MagnifyingGlassIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '@/lib/auth';
 import { useCart } from '@/lib/cart';
@@ -15,6 +16,7 @@ import LanguageSwitcher from '@/components/LanguageSwitcher';
 import SearchModal from '@/components/ui/SearchModal';
 import { useTranslation } from '@/lib/useTranslation';
 import { useStore } from '@/components/StoreProvider';
+import { drawerVariants, fadeVariants, scaleVariants, bounceVariants } from '@/lib/animations';
 
 // Utility function to format phone number
 const formatPhoneNumber = (phone: string, countryCode: string = ''): string => {
@@ -273,14 +275,39 @@ export default function Header() {
             </div>
 
             {/* Cart - Always visible */}
-            <Link href="/cart" className="p-2 text-muted-foreground hover:text-foreground relative transition-colors">
-              <ShoppingCartIcon className="h-6 w-6" />
-              {count > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {count}
-                </span>
-              )}
-            </Link>
+            <motion.div
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              className="relative"
+            >
+              <Link href="/cart" className="p-2 text-muted-foreground hover:text-foreground transition-colors block">
+                <motion.div
+                  animate={count > 0 ? "bounce" : "idle"}
+                  variants={bounceVariants}
+                  className="relative"
+                >
+                  <ShoppingCartIcon className="h-6 w-6" />
+                  <AnimatePresence>
+                    {count > 0 && (
+                      <motion.span 
+                        className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium min-w-[20px]"
+                        variants={scaleVariants}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
+                        style={{ 
+                          fontSize: '10px',
+                          lineHeight: '1',
+                          zIndex: 10
+                        }}
+                      >
+                        {count > 99 ? '99+' : count}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              </Link>
+            </motion.div>
 
             {/* Desktop User Menu */}
             {isAuthenticated ? (
@@ -355,22 +382,27 @@ export default function Header() {
         </div>
 
         {/* Mobile Sidebar */}
-        {isMenuOpen && (
-          <>
-            {/* Backdrop */}
-            <div
-              className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden transition-opacity duration-300 ${
-                isMenuOpen ? 'opacity-100' : 'opacity-0'
-              }`}
-              onClick={() => setIsMenuOpen(false)}
-            />
-            
-            {/* Sidebar */}
-            <div 
-              className={`fixed top-0 right-0 h-full w-80 bg-card/95 backdrop-blur-lg border-l border-border/50 shadow-2xl z-50 md:hidden transform transition-transform duration-300 ease-in-out ${
-                isMenuOpen ? 'translate-x-0' : 'translate-x-full'
-              }`}
-            >
+        <AnimatePresence>
+          {isMenuOpen && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
+                variants={fadeVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                onClick={() => setIsMenuOpen(false)}
+              />
+              
+              {/* Sidebar */}
+              <motion.div 
+                className="fixed top-0 right-0 h-full w-80 bg-card/95 backdrop-blur-lg border-l border-border/50 shadow-2xl z-50 md:hidden"
+                variants={drawerVariants}
+                initial="closed"
+                animate="open"
+                exit="closed"
+              >
               <div className="flex flex-col h-full">
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-border/50">
@@ -552,9 +584,10 @@ export default function Header() {
                   </div>
                 </div>
               </div>
-            </div>
-          </>
-        )}
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
 
         {/* Search bar */}
         {isSearchOpen && (
