@@ -21,25 +21,25 @@ import { drawerVariants, fadeVariants, scaleVariants, bounceVariants } from '@/l
 // Utility function to format phone number
 const formatPhoneNumber = (phone: string, countryCode: string = ''): string => {
   if (!phone) return '';
-  
+
   // Remove any existing + or spaces
   const cleanPhone = phone.replace(/^\+?/, '').replace(/\s+/g, '');
-  
+
   // If phone already starts with country code, return formatted
   if (cleanPhone.length > 10) {
     return `+${cleanPhone}`;
   }
-  
+
   // If countryCode is provided, add it
   if (countryCode) {
     return `+${countryCode} ${cleanPhone}`;
   }
-  
+
   // Default Saudi country code if phone seems local
   if (cleanPhone.length === 9 || cleanPhone.length === 10) {
     return `+966 ${cleanPhone}`;
   }
-  
+
   return phone;
 };
 
@@ -103,13 +103,13 @@ export default function Header() {
   // Filter announcements based on current page
   const getVisibleAnnouncements = () => {
     if (!(store as any)?.announcements) return [];
-    
+
     return (store as any).announcements.filter((announcement: any) => {
       // If no route is specified, show on all pages
       if (!announcement.route || announcement.route === 'all') {
         return true;
       }
-      
+
       // Check for specific route patterns
       switch (announcement.route) {
         case 'home':
@@ -138,35 +138,41 @@ export default function Header() {
     <>
       {/* Store Announcements */}
       {visibleAnnouncements && visibleAnnouncements.length > 0 && (
-        <div className="bg-primary text-primary-foreground">
-          <div className="max-w-7xl mx-auto">
-            {visibleAnnouncements.map((announcement: any, index: number) => (
-              <div
-                key={announcement.id}
-                className="px-4 py-2 text-center text-sm font-medium flex items-center justify-center space-x-2"
-                style={{
-                  backgroundColor: announcement.color || undefined,
-                  color: announcement.text_color
-                }}
-              >
-                {announcement.icon && (
-                  <i className={`${announcement.icon} text-lg`} />
-                )}
-                {announcement.href ? (
-                  <a
-                    href={announcement.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:underline"
-                    style={{ color: announcement.text_color }}
-                  >
-                    {announcement.content}
-                  </a>
-                ) : (
-                  <span>{announcement.content}</span>
-                )}
-              </div>
-            ))}
+        <div className="w-full">
+          <div
+            className="flex flex-col text-primary-foreground"
+            style={{
+              backgroundColor: visibleAnnouncements[0]?.color || undefined,
+              color: visibleAnnouncements[0]?.text_color || undefined
+            }}
+          >
+            <div className="flex flex-col">
+              {visibleAnnouncements.map((announcement: any, index: number) => (
+                <div
+                  key={announcement.id}
+                  className="px-4 py-2 text-center text-sm font-medium flex items-center justify-center gap-3"
+                >
+                  {announcement.icon && (
+                    <span className="flex items-center justify-center rounded-full bg-white/20 p-2 mr-2">
+                      <i className={`${announcement.icon} text-lg`} />
+                    </span>
+                  )}
+                  {announcement.href ? (
+                    <a
+                      href={announcement.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:underline"
+                      style={{ color: announcement.text_color }}
+                    >
+                      {announcement.content}
+                    </a>
+                  ) : (
+                    <span>{announcement.content}</span>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -289,13 +295,13 @@ export default function Header() {
                   <ShoppingCartIcon className="h-6 w-6" />
                   <AnimatePresence>
                     {count > 0 && (
-                      <motion.span 
+                      <motion.span
                         className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium min-w-[20px]"
                         variants={scaleVariants}
                         initial="hidden"
                         animate="visible"
                         exit="exit"
-                        style={{ 
+                        style={{
                           fontSize: '10px',
                           lineHeight: '1',
                           zIndex: 10
@@ -394,9 +400,9 @@ export default function Header() {
                 exit="exit"
                 onClick={() => setIsMenuOpen(false)}
               />
-              
+
               {/* Sidebar */}
-              <motion.div 
+              <motion.div
                 className="fixed top-0 right-0 h-full w-80 bg-card/95 backdrop-blur-lg border-l border-border/50 shadow-2xl z-50 md:hidden"
                 variants={drawerVariants}
                 initial="closed"
