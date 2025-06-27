@@ -337,7 +337,35 @@ const translations = {
     maintenance_estimated_time: 'Estimated Completion Time',
     maintenance_contact: 'If you need immediate assistance, please contact us:',
     maintenance_description: 'We are currently performing scheduled maintenance to improve your shopping experience. Please check back in a few moments.',
-    maintenance_refresh: 'Check Again'
+    maintenance_refresh: 'Check Again',
+
+    // Checkout
+    order_received: 'Order Received',
+    thank_you_for_purchase: 'Thank you for your purchase',
+    verifying_transaction: 'Verifying Transaction',
+    processing_payment_result: 'Processing your payment result',
+    confirm_payment_details: 'We\'re confirming your payment details. This will only take a moment.',
+    invalid_checkout_link: 'Invalid Checkout Link',
+    checkout_link_invalid_expired: 'This checkout link is invalid or has expired. Please try placing your order again.',
+    back_to_cart: 'Back to Cart',
+    back_to_store: 'Back to Store',
+    payment_pending: 'Payment Pending',
+    payment_still_processing: 'Your payment is still being processed. Please wait a moment or contact support if this persists.',
+    transaction_id: 'Transaction ID',
+    amount: 'Amount',
+    status: 'Status',
+    retry: 'Retry',
+    need_help: 'Need help?',
+    contact_support: 'Contact support',
+    processing_request: 'Processing Request',
+    please_wait_moment: 'Please wait a moment...',
+    loading_checkout: 'Loading Checkout',
+    please_wait: 'Please wait...',
+    order_confirmed_processing: 'Your order has been confirmed and is being processed.',
+    email_confirmation_shortly: 'You will receive an email confirmation shortly with your order details.',
+    view_order_details: 'View Order Details',
+    login_to_view_order: 'Login to View Order',
+    payment_id: 'Payment ID'
   },
   ar: {
     // Navigation
@@ -674,7 +702,35 @@ const translations = {
     maintenance_estimated_time: 'الوقت المقدر للانتهاء',
     maintenance_contact: 'إذا كنت بحاجة إلى مساعدة فورية، يرجى الاتصال بنا:',
     maintenance_description: 'نحن نقوم حالياً بصيانة مجدولة لتحسين تجربة التسوق الخاصة بك. يرجى العودة خلال لحظات.',
-    maintenance_refresh: 'تحقق مرة أخرى'
+    maintenance_refresh: 'تحقق مرة أخرى',
+
+    // Checkout
+    order_received: 'تم استلام الطلب',
+    thank_you_for_purchase: 'شكراً لك على شرائك',
+    verifying_transaction: 'جاري التحقق من المعاملة',
+    processing_payment_result: 'جاري معالجة نتيجة الدفع',
+    confirm_payment_details: 'نحن نؤكد تفاصيل الدفع الخاصة بك. سيستغرق هذا لحظة واحدة فقط.',
+    invalid_checkout_link: 'رابط الدفع غير صالح',
+    checkout_link_invalid_expired: 'رابط الدفع هذا غير صالح أو منتهي الصلاحية. يرجى المحاولة مرة أخرى.',
+    back_to_cart: 'العودة للسلة',
+    back_to_store: 'العودة للمتجر',
+    payment_pending: 'الدفع معلق',
+    payment_still_processing: 'لا يزال دفعك قيد المعالجة. يرجى الانتظار لحظة أو الاتصال بالدعم إذا استمر هذا.',
+    transaction_id: 'رقم المعاملة',
+    amount: 'المبلغ',
+    status: 'الحالة',
+    retry: 'إعادة المحاولة',
+    need_help: 'تحتاج مساعدة؟',
+    contact_support: 'اتصل بالدعم',
+    processing_request: 'جاري معالجة الطلب',
+    please_wait_moment: 'يرجى الانتظار لحظة...',
+    loading_checkout: 'جاري تحميل الدفع',
+    please_wait: 'يرجى الانتظار...',
+    order_confirmed_processing: 'تم تأكيد طلبك وهو قيد المعالجة.',
+    email_confirmation_shortly: 'ستتلقى رسالة تأكيد بالبريد الإلكتروني قريباً مع تفاصيل طلبك.',
+    view_order_details: 'عرض تفاصيل الطلب',
+    login_to_view_order: 'سجل الدخول لعرض الطلب',
+    payment_id: 'رقم الدفع'
   }
 };
 

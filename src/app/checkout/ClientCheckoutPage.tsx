@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { sdk } from '@/lib/sdk';
 import { useAuth } from '@/lib/auth';
 import { useCart } from '@/lib/cart';
+import { useTranslation } from '@/lib/useTranslation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { 
@@ -27,6 +28,8 @@ interface CheckoutResult {
     id: string;
     amount: number;
     status: string;
+    payment_method?: string;
+    payment_id?: string;
     created_at: string;
   };
   order?: {
@@ -44,9 +47,10 @@ function CheckoutResultContent() {
   const [showDetails, setShowDetails] = useState(false);
   const { isAuthenticated } = useAuth();
   const { clearCart } = useCart();
+  const { t } = useTranslation();
 
-  // Get parameters from URL - same format as legacy
-  const checkoutId = searchParams.get('checkout');
+  // Get parameters from URL - using txid as the parameter
+  const checkoutId = searchParams.get('txid');
   const expires = searchParams.get('expires');
   const signature = searchParams.get('signature');
 
@@ -80,17 +84,27 @@ function CheckoutResultContent() {
       clearCart();
 
       // Show success toast
-      toast.success('Payment completed successfully!');
+      toast.success(t('order_placed_successfully'));
 
-      // Trigger confetti animation
-      const duration = 3000;
+      // Trigger enhanced confetti animation
+      const duration = 4000;
       const animationEnd = Date.now() + duration;
-      const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 1000 };
+      const colors = ['#10b981', '#059669', '#34d399', '#6ee7b7', '#a7f3d0'];
 
-      function randomInRange(min: number, max: number) {
-        return Math.random() * (max - min) + min;
-      }
+      // Initial burst
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: colors,
+        ticks: 200,
+        gravity: 1,
+        decay: 0.94,
+        startVelocity: 30,
+        zIndex: 1000
+      });
 
+      // Continuous effect
       const interval = setInterval(function() {
         const timeLeft = animationEnd - Date.now();
 
@@ -98,25 +112,37 @@ function CheckoutResultContent() {
           return clearInterval(interval);
         }
 
-        const particleCount = 50 * (timeLeft / duration);
-        
         confetti({
-          ...defaults,
-          particleCount,
-          origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+          particleCount: 3,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors: colors,
+          ticks: 100,
+          gravity: 0.8,
+          decay: 0.93,
+          startVelocity: 20,
+          zIndex: 1000
         });
         
         confetti({
-          ...defaults,
-          particleCount,
-          origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+          particleCount: 3,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors: colors,
+          ticks: 100,
+          gravity: 0.8,
+          decay: 0.93,
+          startVelocity: 20,
+          zIndex: 1000
         });
-      }, 250);
+      }, 200);
 
-      // Show details after animation
+      // Show details after a short delay
       setTimeout(() => {
         setShowDetails(true);
-      }, 1500);
+      }, 800);
     }
   }, [result, celebrationPlayed, clearCart]);
 
@@ -130,14 +156,27 @@ function CheckoutResultContent() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="relative">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent mx-auto"></div>
-            <ArrowPathIcon className="h-8 w-8 text-primary absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 flex items-center justify-center">
+        <div className="text-center space-y-6">
+          <div className="relative w-24 h-24 mx-auto">
+            <div className="absolute inset-0 rounded-full bg-primary/10 animate-pulse"></div>
+            <div className="absolute inset-2 rounded-full bg-primary/20 animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+            <div className="absolute inset-4 rounded-full bg-primary/30 animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-12 h-12 border-3 border-primary border-t-transparent rounded-full animate-spin"></div>
+            </div>
           </div>
-          <p className="text-lg text-muted-foreground">Processing your payment result...</p>
-          <p className="text-sm text-muted-foreground">Please wait while we confirm your order</p>
+          <div className="space-y-2">
+            <h3 className="text-xl font-semibold text-foreground">{t('verifying_transaction')}</h3>
+            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+              {t('confirm_payment_details')}
+            </p>
+          </div>
+          <div className="flex justify-center gap-1">
+            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
+            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+          </div>
         </div>
       </div>
     );
@@ -151,16 +190,16 @@ function CheckoutResultContent() {
           <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
             <ExclamationTriangleIcon className="h-10 w-10 text-red-600" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground mb-4">Invalid Checkout Link</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-4">{t('invalid_checkout_link')}</h1>
           <p className="text-muted-foreground mb-6">
-            This checkout link is invalid or has expired. Please try placing your order again.
+            {t('checkout_link_invalid_expired')}
           </p>
           <div className="space-y-3">
             <Link href="/cart">
-              <Button className="w-full">Back to Cart</Button>
+              <Button className="w-full">{t('back_to_cart')}</Button>
             </Link>
             <Link href="/">
-              <Button variant="outline" className="w-full">Back to Store</Button>
+              <Button variant="outline" className="w-full">{t('back_to_store')}</Button>
             </Link>
           </div>
         </div>
@@ -174,72 +213,109 @@ function CheckoutResultContent() {
     const checkout = result.checkout;
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-green-900/20 dark:via-emerald-900/20 dark:to-teal-900/20">
-        {/* Animated Background */}
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/10">
+        {/* Subtle animated background */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-green-400/20 to-emerald-400/20 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-teal-400/20 to-cyan-400/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+          <div className="absolute top-1/4 -right-1/4 w-96 h-96 bg-green-500/5 rounded-full blur-3xl"></div>
+          <div className="absolute -bottom-1/4 -left-1/4 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl"></div>
         </div>
 
-        <div className="relative z-10 container mx-auto px-4 py-8">
+        <div className="relative z-10 container max-w-2xl mx-auto px-4 py-12">
           {/* Success Header */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-24 h-24 bg-green-500 rounded-full mb-6 animate-bounce">
-              <CheckCircleIcon className="h-12 w-12 text-white" />
+          <div className="text-center mb-10">
+            <div className="relative inline-flex items-center justify-center w-20 h-20 mb-6">
+              <div className="absolute inset-0 bg-green-500/20 rounded-full animate-ping"></div>
+              <div className="relative flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full shadow-lg">
+                <CheckCircleIcon className="h-10 w-10 text-white" />
+              </div>
             </div>
             
-            <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-4">
-              Payment Successful! 🎉
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
+              {t('order_received')}
             </h1>
             
-            <p className="text-xl text-muted-foreground mb-2">
-              Thank you for your purchase!
-            </p>
-            
             <p className="text-lg text-muted-foreground">
-              Order #{order.id} • {new Date(order.created_at).toLocaleDateString()}
+              {t('thank_you_for_purchase')}
             </p>
           </div>
 
           {/* Order Details Card */}
-          <div className="max-w-4xl mx-auto">
-            <div className={`bg-card/80 backdrop-blur-md border border-border/50 rounded-2xl shadow-2xl p-8 transition-all duration-1000 ${showDetails ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          <div className={`bg-card border border-border rounded-xl shadow-sm transition-all duration-700 ${showDetails ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+            {/* Order Info */}
+            <div className="p-6 space-y-6">
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <span>Order #{order.id}</span>
+                <span>{new Date(order.created_at).toLocaleDateString('en-US', { 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}</span>
+              </div>
+
               {/* Order Total */}
-              <div className="text-center mb-8 pb-8 border-b border-border/30">
-                <h2 className="text-2xl font-bold text-foreground mb-2">Order Total</h2>
-                <p className="text-3xl font-bold text-emerald-600">
+              <div className="text-center py-8 border-y border-border">
+                <p className="text-sm text-muted-foreground mb-1">{t('order_total')}</p>
+                <p className="text-4xl font-bold text-foreground mb-3">
                   SAR {order.total}
                 </p>
-                <div className="inline-flex items-center px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded-full text-sm font-medium mt-2">
-                  <CheckCircleIcon className="h-4 w-4 mr-1" />
-                  Payment Confirmed
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-500/10 text-green-600 dark:text-green-400 rounded-full text-sm font-medium">
+                  <CheckCircleIcon className="h-4 w-4" />
+                  {t('order_received')}
                 </div>
               </div>
 
-              {/* Success Message */}
-              <div className="text-center mb-8">
-                <p className="text-lg text-muted-foreground">
-                  Your order has been confirmed and is being processed.
+              {/* Order Status and Payment Details */}
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="bg-muted/50 rounded-lg p-4">
+                    <p className="text-sm text-muted-foreground mb-1">{t('status')}</p>
+                    <p className="font-medium text-foreground">{order.status || 'Processing'}</p>
+                  </div>
+                  
+                  {result?.checkout?.payment_method && (
+                    <div className="bg-muted/50 rounded-lg p-4">
+                      <p className="text-sm text-muted-foreground mb-1">{t('payment_method')}</p>
+                      <p className="font-medium text-foreground capitalize">{result.checkout.payment_method}</p>
+                    </div>
+                  )}
+                </div>
+
+                {result?.checkout?.payment_id && (
+                  <div className="bg-muted/50 rounded-lg p-4">
+                    <p className="text-sm text-muted-foreground mb-1">{t('payment_id')}</p>
+                    <p className="font-medium text-foreground font-mono text-sm">{result.checkout.payment_id}</p>
+                  </div>
+                )}
+                
+                <p className="text-sm text-center text-muted-foreground">
+                  {t('order_confirmed_processing')}
                 </p>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Order Status: <span className="font-semibold">{order.status}</span>
+                
+                <p className="text-sm text-center text-muted-foreground">
+                  {t('email_confirmation_shortly')}
                 </p>
               </div>
 
               {/* Actions */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                 {isAuthenticated ? (
-                  <Link href={`/order/${order.id}`}>
-                    <Button className="w-full">View Order Details</Button>
+                  <Link href={`/order/${order.id}`} className="contents">
+                    <Button className="w-full" size="lg">
+                      {t('view_order_details')}
+                    </Button>
                   </Link>
                 ) : (
-                  <Link href="/login">
-                    <Button className="w-full">Login to View Order</Button>
+                  <Link href="/login" className="contents">
+                    <Button className="w-full" size="lg">
+                      {t('login_to_view_order')}
+                    </Button>
                   </Link>
                 )}
                 
-                <Link href="/">
-                  <Button variant="outline" className="w-full">Continue Shopping</Button>
+                <Link href="/" className="contents">
+                  <Button variant="outline" className="w-full" size="lg">
+                    {t('continue_shopping')}
+                  </Button>
                 </Link>
               </div>
             </div>
@@ -258,17 +334,23 @@ function CheckoutResultContent() {
             <ExclamationTriangleIcon className="h-10 w-10 text-yellow-600" />
           </div>
           
-          <h1 className="text-2xl font-bold text-foreground mb-4">Payment Pending</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-4">{t('payment_pending')}</h1>
           
           <p className="text-muted-foreground mb-6">
-            Your payment is still being processed. Please wait a moment or contact support if this persists.
+            {t('payment_still_processing')}
           </p>
           
           <div className="bg-yellow-100 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6 text-left">
             <p className="text-sm text-yellow-800 dark:text-yellow-200">
-              <strong>Checkout ID:</strong> {result?.checkout?.id || checkoutId}<br />
-              <strong>Amount:</strong> SAR {result?.checkout?.amount || 'N/A'}<br />
-              <strong>Status:</strong> {result?.checkout?.status || 'Pending'}
+              <strong>{t('transaction_id')}:</strong> {result?.checkout?.id || checkoutId}<br />
+              <strong>{t('amount')}:</strong> SAR {result?.checkout?.amount || 'N/A'}<br />
+              <strong>{t('status')}:</strong> {result?.checkout?.status || 'Pending'}
+              {result?.checkout?.payment_method && (
+                <><br /><strong>{t('payment_method')}:</strong> {result.checkout.payment_method}</>
+              )}
+              {result?.checkout?.payment_id && (
+                <><br /><strong>{t('payment_id')}:</strong> {result.checkout.payment_id}</>
+              )}
             </p>
           </div>
           
@@ -276,7 +358,7 @@ function CheckoutResultContent() {
             <Link href="/cart">
               <Button className="w-full">
                 <ShoppingBagIcon className="h-4 w-4 mr-2" />
-                Back to Cart
+                {t('back_to_cart')}
               </Button>
             </Link>
             
@@ -286,16 +368,16 @@ function CheckoutResultContent() {
               onClick={() => refetch()}
             >
               <ArrowPathIcon className="h-4 w-4 mr-2" />
-              Retry
+              {t('retry')}
             </Button>
             
             <Link href="/">
-              <Button variant="ghost" className="w-full">Back to Store</Button>
+              <Button variant="ghost" className="w-full">{t('back_to_store')}</Button>
             </Link>
           </div>
           
           <p className="text-sm text-muted-foreground mt-6">
-            Need help? <Link href="/contact" className="text-primary hover:underline">Contact support</Link>
+            {t('need_help')} <Link href="/contact" className="text-primary hover:underline">{t('contact_support')}</Link>
           </p>
         </div>
       </div>
@@ -304,10 +386,39 @@ function CheckoutResultContent() {
 
   // Default/processing state
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
-      <div className="text-center space-y-4">
-        <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent mx-auto"></div>
-        <p className="text-lg text-muted-foreground">Processing your request...</p>
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 flex items-center justify-center">
+      <div className="text-center space-y-6">
+        <div className="relative w-20 h-20 mx-auto">
+          <div className="absolute inset-0 rounded-full bg-primary/10 animate-pulse"></div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-12 h-12 border-3 border-primary border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        </div>
+        <div className="space-y-2">
+          <h3 className="text-lg font-medium text-foreground">{t('processing_request')}</h3>
+          <p className="text-sm text-muted-foreground">{t('please_wait_moment')}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LoadingFallback() {
+  const { t } = useTranslation();
+  
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 flex items-center justify-center">
+      <div className="text-center space-y-6">
+        <div className="relative w-24 h-24 mx-auto">
+          <div className="absolute inset-0 rounded-full bg-primary/10 animate-pulse"></div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-12 h-12 border-3 border-primary border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        </div>
+        <div className="space-y-2">
+          <h3 className="text-xl font-semibold text-foreground">{t('loading_checkout')}</h3>
+          <p className="text-sm text-muted-foreground">{t('please_wait')}</p>
+        </div>
       </div>
     </div>
   );
@@ -315,14 +426,7 @@ function CheckoutResultContent() {
 
 export default function CheckoutResultPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-100 to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent mx-auto"></div>
-          <p className="text-lg text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    }>
+    <Suspense fallback={<LoadingFallback />}>
       <CheckoutResultContent />
     </Suspense>
   );

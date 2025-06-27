@@ -23,7 +23,7 @@ const otpSchema = z.object({
 });
 
 const registrationSchema = z.object({
-  name: z.string().min(2, 'Name is required'),
+  first_name: z.string().min(2, 'First name is required'),
   email: z.string().email('Valid email is required').optional(),
   last_name: z.string().optional(),
 });
@@ -62,8 +62,9 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
   const registrationForm = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
     defaultValues: {
-      name: '',
+      first_name: '',
       email: '',
+      last_name: '',
     },
   });
 
@@ -543,12 +544,12 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                           </label>
                           <input
                             type="text"
-                            {...registrationForm.register('name')}
+                            {...registrationForm.register('first_name')}
                             className="w-full px-3 py-2 bg-background/50 backdrop-blur-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring transition-all"
                             placeholder="John"
                           />
-                          {registrationForm.formState.errors.name && (
-                            <p className="text-destructive text-sm mt-1">{registrationForm.formState.errors.name.message}</p>
+                          {registrationForm.formState.errors.first_name && (
+                            <p className="text-destructive text-sm mt-1">{registrationForm.formState.errors.first_name.message}</p>
                           )}
                         </div>
 

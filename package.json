@@ -32,7 +32,7 @@
     "react-hook-form": "^7.58.1",
     "react-intersection-observer": "^9.16.0",
     "react-phone-number-input": "^3.4.12",
-    "rmz-storefront-sdk": "^2.0.0",
+    "rmz-storefront-sdk": "^2.0.3",
     "sonner": "^2.0.5",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",

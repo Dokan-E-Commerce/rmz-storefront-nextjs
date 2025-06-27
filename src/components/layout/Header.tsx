@@ -138,41 +138,35 @@ export default function Header() {
     <>
       {/* Store Announcements */}
       {visibleAnnouncements && visibleAnnouncements.length > 0 && (
-        <div className="w-full">
-          <div
-            className="flex flex-col text-primary-foreground"
-            style={{
-              backgroundColor: visibleAnnouncements[0]?.color || undefined,
-              color: visibleAnnouncements[0]?.text_color || undefined
-            }}
-          >
-            <div className="flex flex-col">
-              {visibleAnnouncements.map((announcement: any, index: number) => (
-                <div
-                  key={announcement.id}
-                  className="px-4 py-2 text-center text-sm font-medium flex items-center justify-center gap-3"
-                >
-                  {announcement.icon && (
-                    <span className="flex items-center justify-center rounded-full bg-white/20 p-2 mr-2">
-                      <i className={`${announcement.icon} text-lg`} />
-                    </span>
-                  )}
-                  {announcement.href ? (
-                    <a
-                      href={announcement.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:underline"
-                      style={{ color: announcement.text_color }}
-                    >
-                      {announcement.content}
-                    </a>
-                  ) : (
-                    <span>{announcement.content}</span>
-                  )}
-                </div>
-              ))}
-            </div>
+        <div className="bg-primary text-primary-foreground">
+          <div className="max-w-7xl mx-auto">
+            {visibleAnnouncements.map((announcement: any, index: number) => (
+              <div
+                key={announcement.id}
+                className="px-4 py-2 text-center text-sm font-medium flex items-center justify-center space-x-2"
+                style={{
+                  backgroundColor: announcement.color || undefined,
+                  color: announcement.text_color
+                }}
+              >
+                {announcement.icon && (
+                  <i className={`${announcement.icon} text-lg`} />
+                )}
+                {announcement.href ? (
+                  <a
+                    href={announcement.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:underline"
+                    style={{ color: announcement.text_color }}
+                  >
+                    {announcement.content}
+                  </a>
+                ) : (
+                  <span>{announcement.content}</span>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       )}

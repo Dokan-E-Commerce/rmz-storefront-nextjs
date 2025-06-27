@@ -33,7 +33,9 @@ export function useAddToCart() {
       await addItem(product as any, quantity, customFields);
       toast.success(`${product.name} added to cart successfully!`);
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to add item to cart');
+      // SDK throws Error objects with the API message directly in error.message
+      const errorMessage = error.message || error.response?.data?.message || 'Failed to add item to cart';
+      toast.error(errorMessage);
     } finally {
       setIsLoading(prev => ({ ...prev, [product.id]: false }));
     }

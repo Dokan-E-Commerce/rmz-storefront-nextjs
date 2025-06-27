@@ -37,17 +37,29 @@ export function LanguageProvider({ children, initialLanguage }: LanguageProvider
 
   const [locale, setLocaleState] = useState<string>(serverLanguage);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   const isRTL = locale === 'ar';
 
-    // Initialize client-side locale after hydration
+  // Mount effect to ensure component is ready
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Initialize client-side locale after hydration
+  useEffect(() => {
+    if (!isMounted) return;
+    
     let targetLocale = serverLanguage;
 
     // Check localStorage for user preference only after hydration
-    const savedLocale = localStorage.getItem(STORAGE_KEY);
-    if (savedLocale && SUPPORTED_LOCALES.includes(savedLocale)) {
-      targetLocale = savedLocale;
+    try {
+      const savedLocale = localStorage.getItem(STORAGE_KEY);
+      if (savedLocale && SUPPORTED_LOCALES.includes(savedLocale)) {
+        targetLocale = savedLocale;
+      }
+    } catch (e) {
+      // Ignore localStorage errors
     }
 
     // Only update if different from current state to prevent unnecessary re-renders
@@ -57,22 +69,31 @@ export function LanguageProvider({ children, initialLanguage }: LanguageProvider
 
     updateDocumentAttributes(targetLocale);
     setIsHydrated(true);
-  }, [serverLanguage]); // Remove locale from dependencies to prevent infinite loop
+  }, [isMounted, serverLanguage]); // Add isMounted dependency
 
   // Update document attributes when locale changes
   useEffect(() => {
-    if (isHydrated) {
+    if (isHydrated && isMounted) {
       updateDocumentAttributes(locale);
 
       // Save to localStorage
-      localStorage.setItem(STORAGE_KEY, locale);
+      try {
+        localStorage.setItem(STORAGE_KEY, locale);
+      } catch (e) {
+        // Ignore localStorage errors
+      }
     }
-  }, [locale, isHydrated]);
+  }, [locale, isHydrated, isMounted]);
 
   const setLocale = (newLocale: string) => {
     if (!SUPPORTED_LOCALES.includes(newLocale)) return;
     setLocaleState(newLocale);
   };
+
+  // Don't render children until mounted to prevent hydration issues
+  if (!isMounted) {
+    return children as React.ReactElement;
+  }
 
   return (
     <LanguageContext.Provider value={{ locale, setLocale, isRTL }}>
@@ -84,7 +105,12 @@ export function LanguageProvider({ children, initialLanguage }: LanguageProvider
 export function useLanguage() {
   const context = useContext(LanguageContext);
   if (!context) {
-    throw new Error('useLanguage must be used within a LanguageProvider');
+    // Return default values if context is not available (during SSR or hydration)
+    return {
+      locale: DEFAULT_LOCALE,
+      setLocale: () => {},
+      isRTL: false
+    };
   }
   return context;
 }
