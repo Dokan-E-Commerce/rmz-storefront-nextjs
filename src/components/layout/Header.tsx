@@ -138,36 +138,39 @@ export default function Header() {
     <>
       {/* Store Announcements */}
       {visibleAnnouncements && visibleAnnouncements.length > 0 && (
-        <div className="bg-primary text-primary-foreground">
-          <div className="max-w-7xl mx-auto">
-            {visibleAnnouncements.map((announcement: any, index: number) => (
-              <div
-                key={announcement.id}
-                className="px-4 py-2 text-center text-sm font-medium flex items-center justify-center space-x-2"
-                style={{
-                  backgroundColor: announcement.color || undefined,
-                  color: announcement.text_color
-                }}
-              >
-                {announcement.icon && (
-                  <i className={`${announcement.icon} text-lg`} />
-                )}
-                {announcement.href ? (
-                  <a
-                    href={announcement.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:underline"
-                    style={{ color: announcement.text_color }}
-                  >
-                    {announcement.content}
-                  </a>
-                ) : (
-                  <span>{announcement.content}</span>
-                )}
-              </div>
-            ))}
-          </div>
+        <div className="w-full">
+          {visibleAnnouncements.map((announcement: any, index: number) => (
+            <div
+              key={announcement.id}
+              className="w-full px-4 py-3 text-center text-sm font-medium flex items-center justify-center"
+              style={{
+                backgroundColor: announcement.color || '#8B5CF6',
+                color: announcement.text_color || '#FFFFFF'
+              }}
+            >
+              {announcement.icon && (
+                <div className="flex items-center">
+                  <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2 shadow-lg border border-white/30">
+                    <i className={`${announcement.icon} text-lg flex-shrink-0`} />
+                  </div>
+                  <div className="w-6"></div>
+                </div>
+              )}
+              {announcement.href ? (
+                <a
+                  href={announcement.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:underline transition-all duration-200"
+                  style={{ color: announcement.text_color || '#FFFFFF' }}
+                >
+                  {announcement.content}
+                </a>
+              ) : (
+                <span className="leading-relaxed">{announcement.content}</span>
+              )}
+            </div>
+          ))}
         </div>
       )}
 

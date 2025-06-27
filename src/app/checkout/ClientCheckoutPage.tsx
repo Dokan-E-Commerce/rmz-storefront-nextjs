@@ -50,7 +50,7 @@ function CheckoutResultContent() {
   const { t } = useTranslation();
 
   // Get parameters from URL - using txid as the parameter
-  const checkoutId = searchParams.get('txid');
+  const checkoutId = searchParams.get('checkout');
   const expires = searchParams.get('expires');
   const signature = searchParams.get('signature');
 
