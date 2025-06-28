@@ -15,10 +15,6 @@ export const storeApi = {
 
   getCurrencies: async () => {
     return await sdk.store.getCurrencies() as any;
-  },
-
-  changeCurrency: async (currency: string) => {
-    return await sdk.store.changeCurrency(currency);
   }
 };
 
