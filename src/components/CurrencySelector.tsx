@@ -14,6 +14,7 @@ export default function CurrencySelector() {
     availableCurrencies,
     isLoading,
     setCurrency,
+    resetToDefault,
     loadCurrencies
   } = useCurrency();
 
@@ -27,6 +28,14 @@ export default function CurrencySelector() {
   const handleCurrencyChange = async (currency: Currency) => {
     try {
       await setCurrency(currency);
+      setIsOpen(false);
+    } catch (error) {
+    }
+  };
+
+  const handleResetToDefault = async () => {
+    try {
+      await resetToDefault();
       setIsOpen(false);
     } catch (error) {
     }
@@ -119,22 +128,47 @@ export default function CurrencySelector() {
                 initial="hidden"
                 animate="visible"
               >
+                {/* Return to SAR option */}
+                {selectedCurrency?.code !== 'SAR' && selectedCurrency?.code !== 'ر.س' && (
+                  <motion.div
+                    variants={fadeInUp}
+                    transition={{ delay: 0 }}
+                  >
+                                         <motion.button
+                       onClick={handleResetToDefault}
+                       disabled={isLoading}
+                       className="w-full px-4 py-2 text-sm transition-colors hover:bg-muted/50 flex items-center justify-between text-foreground border-b border-border/30 mb-1"
+                       whileHover={{ scale: 1.02, x: 2 }}
+                       whileTap={{ scale: 0.98 }}
+                     >
+                       <div className="flex-1 text-center">
+                         <div className="font-medium text-primary">
+                           🇸🇦 ر.س
+                         </div>
+                         <div className="text-xs text-muted-foreground">
+                           العودة للريال السعودي
+                         </div>
+                       </div>
+                     </motion.button>
+                  </motion.div>
+                )}
+                
                 {availableCurrencies.map((currency, index) => (
                   <motion.div
                     key={currency.code}
                     variants={fadeInUp}
-                    transition={{ delay: index * 0.05 }}
+                    transition={{ delay: (index + 1) * 0.05 }}
                   >
                     <motion.button
                       onClick={() => handleCurrencyChange(currency)}
                       disabled={isLoading}
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors hover:bg-muted/50 flex items-center justify-between ${
+                      className={`w-full px-4 py-2 text-sm transition-colors hover:bg-muted/50 flex items-center justify-between ${
                         selectedCurrency.code === currency.code ? 'bg-primary/10 text-primary' : 'text-foreground'
                       } disabled:opacity-50`}
                       whileHover={{ scale: 1.02, x: 2 }}
                       whileTap={{ scale: 0.98 }}
                     >
-                      <div>
+                      <div className="flex-1 text-center">
                         <div className="font-medium">
                           {currency.symbol}
                         </div>

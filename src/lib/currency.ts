@@ -17,6 +17,7 @@ interface CurrencyStore {
 
   // Actions
   setCurrency: (currency: Currency) => Promise<void>;
+  resetToDefault: () => Promise<void>;
   loadCurrencies: () => Promise<void>;
   initializeFromStore: (storeCurrency: string) => void;
   formatPrice: (price: number | string) => string;
@@ -33,11 +34,57 @@ export const useCurrency = create<CurrencyStore>()(
       setCurrency: async (currency: Currency) => {
         set({ isLoading: true });
         try {
-          // Just update the selected currency locally - no backend call
+          // Call the backend API to change session currency
+          await storeApi.changeCurrency(currency.symbol);
+          
+          // Update the selected currency locally
           set({ selectedCurrency: currency });
 
-          // No need to reload the page, prices will be recalculated automatically
+          // Prices will be recalculated automatically on next API calls
         } catch (error) {
+          // If backend call fails, still update locally for UX
+          set({ selectedCurrency: currency });
+          throw error;
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      resetToDefault: async () => {
+        set({ isLoading: true });
+        try {
+          // Call the backend API to reset to default currency (SAR)
+          // Based on backend code, passing null should reset to default
+          await storeApi.changeCurrency('SAR');
+          
+          // Find the default currency or SAR fallback
+          const { availableCurrencies } = get();
+          const defaultCurrency = availableCurrencies.find(c => c.is_default) || 
+                                   availableCurrencies.find(c => c.code === 'SAR' || c.code === 'ر.س') ||
+                                   {
+                                     id: 1,
+                                     code: 'ر.س',
+                                     symbol: 'ر.س',
+                                     name: 'ريال سعودي',
+                                     rate: 1.0,
+                                     is_default: true
+                                   };
+          
+          set({ selectedCurrency: defaultCurrency });
+        } catch (error) {
+          // If backend call fails, still reset to default locally
+          const { availableCurrencies } = get();
+          const defaultCurrency = availableCurrencies.find(c => c.is_default) || 
+                                   availableCurrencies.find(c => c.code === 'SAR' || c.code === 'ر.س') ||
+                                   {
+                                     id: 1,
+                                     code: 'ر.س',
+                                     symbol: 'ر.س',
+                                     name: 'ريال سعودي',
+                                     rate: 1.0,
+                                     is_default: true
+                                   };
+          set({ selectedCurrency: defaultCurrency });
           throw error;
         } finally {
           set({ isLoading: false });
