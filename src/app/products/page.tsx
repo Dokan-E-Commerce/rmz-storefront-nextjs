@@ -5,16 +5,18 @@ import ClientProductsPage from './ClientProductsPage'
 export async function generateMetadata(): Promise<Metadata> {
   const store = await getStoreSSRData()
   
-  const title = `All Products | ${store?.name || 'Online Store'}`
+  const title = 'جميع المنتجات'
   const description = store?.description 
-    ? `Browse our complete collection of products at ${store.name}. ${store.description}`
-    : `Discover amazing products and deals. Shop digital products, courses, subscriptions and more at ${store?.name || 'our online store'}.`
+    ? `تصفح مجموعتنا الكاملة من المنتجات في ${store.name}. ${store.description}`
+    : `اكتشف منتجات وعروض مذهلة. تسوق المنتجات الرقمية والدورات والاشتراكات والمزيد في ${store?.name || 'متجرنا الإلكتروني'}.`
 
   const keywords = [
-    'products',
-    'online shopping',
-    'digital products',
-    'e-commerce',
+    'منتجات',
+    'تسوق اونلاين',
+    'منتجات رقمية',
+    'تجارة إلكترونية',
+    'متجر إلكتروني',
+    'السعودية',
     store?.name,
     store?.seo?.keywords
   ].filter(Boolean).join(', ')

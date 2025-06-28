@@ -86,7 +86,8 @@ export const useCart = create<CartStore>()(
           }
           
           if (subscriptionPlan) {
-            options.subscription_plan = subscriptionPlan;
+            // Security: Only send the subscription plan ID to prevent price manipulation
+            options.subscription_plan = subscriptionPlan.id;
           }
 
           const cartData = await sdk.cart.addItem(product.id, quantity, options) as any;

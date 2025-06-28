@@ -5,15 +5,17 @@ import ClientReviewsPage from './ClientReviewsPage'
 export async function generateMetadata(): Promise<Metadata> {
   const store = await getStoreSSRData()
   
-  const title = `Customer Reviews | ${store?.name || 'Online Store'}`
-  const description = `Read genuine customer reviews and ratings for products at ${store?.name || 'our online store'}. See what our customers say about their shopping experience.`
+  const title = 'آراء العملاء'
+  const description = `اقرأ آراء العملاء الحقيقية وتقييمات المنتجات في ${store?.name || 'متجرنا الإلكتروني'}. اطلع على ما يقوله عملاؤنا حول تجربة التسوق.`
 
   const keywords = [
-    'customer reviews',
-    'product reviews',
-    'ratings',
-    'testimonials',
-    'customer feedback',
+    'آراء العملاء',
+    'تقييمات المنتجات',
+    'تقييمات',
+    'شهادات العملاء',
+    'تعليقات العملاء',
+    'متجر إلكتروني',
+    'السعودية',
     store?.name,
     store?.seo?.keywords
   ].filter(Boolean).join(', ')

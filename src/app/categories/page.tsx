@@ -5,16 +5,18 @@ import ClientCategoriesPage from './ClientCategoriesPage'
 export async function generateMetadata(): Promise<Metadata> {
   const store = await getStoreSSRData()
   
-  const title = `Categories | ${store?.name || 'Online Store'}`
+  const title = 'التصنيفات'
   const description = store?.description 
-    ? `Browse our product categories at ${store.name}. ${store.description}`
-    : `Discover our product categories and find exactly what you're looking for at ${store?.name || 'our online store'}.`
+    ? `تصفح تصنيفات المنتجات في ${store.name}. ${store.description}`
+    : `اكتشف تصنيفات منتجاتنا وجد بالضبط ما تبحث عنه في ${store?.name || 'متجرنا الإلكتروني'}.`
 
   const keywords = [
-    'categories',
-    'product categories',
-    'browse products',
-    'shopping categories',
+    'تصنيفات',
+    'تصنيفات المنتجات',
+    'تصفح المنتجات',
+    'تصنيفات التسوق',
+    'متجر إلكتروني',
+    'السعودية',
     store?.name,
     store?.seo?.keywords
   ].filter(Boolean).join(', ')

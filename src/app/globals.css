@@ -253,4 +253,45 @@
   .dark .phone-input .PhoneInputCountrySelectArrow {
     @apply text-muted-foreground;
   }
+
+  /* LTR utility for phone numbers and numeric content */
+  .ltr {
+    direction: ltr !important;
+    text-align: left !important;
+    unicode-bidi: embed;
+  }
+
+  /* RTL override for specific elements that should always be LTR */
+  .force-ltr {
+    direction: ltr !important;
+    text-align: left !important;
+    unicode-bidi: bidi-override;
+  }
+
+  /* Phone number utility - right aligned but LTR direction */
+  .phone-ltr {
+    direction: ltr !important;
+    text-align: right !important;
+    unicode-bidi: plaintext;
+  }
+
+  /* Phone number utility - left aligned for English */
+  .phone-ltr-left {
+    direction: ltr !important;
+    text-align: left !important;
+    unicode-bidi: plaintext;
+  }
+
+  /* Responsive phone alignment based on language */
+  [dir="ltr"] .phone-adaptive {
+    direction: ltr !important;
+    text-align: left !important;
+    unicode-bidi: plaintext;
+  }
+
+  [dir="rtl"] .phone-adaptive {
+    direction: ltr !important;
+    text-align: right !important;
+    unicode-bidi: plaintext;
+  }
 }

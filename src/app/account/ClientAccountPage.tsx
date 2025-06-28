@@ -56,15 +56,56 @@ export default function AccountPage() {
 
   const onProfileSubmit = async (data: ProfileFormData) => {
     setIsUpdating(true);
+    
     try {
       const updatedCustomer = await authApi.updateProfile(data);
       updateCustomer(updatedCustomer);
-      toast.success('Profile updated successfully');
+      toast.success(t('profile_updated_successfully'));
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Error updating profile');
+      // Try to get the error message from different possible locations
+      let errorMessage = t('error_updating_profile');
+      
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        
+        // Check for direct message
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+        // Check for errors object with field-specific errors
+        else if (errorData.errors) {
+          const firstError = Object.values(errorData.errors)[0];
+          if (Array.isArray(firstError) && firstError.length > 0) {
+            errorMessage = firstError[0];
+          }
+        }
+      }
+      // Fallback to error message if available
+      else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
+    } finally {
+      setIsUpdating(false);
     }
-    setIsUpdating(false);
   };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate form
+    const isValid = await profileForm.trigger();
+    if (!isValid) {
+      return;
+    }
+    
+    // Get form data
+    const data = profileForm.getValues();
+    await onProfileSubmit(data);
+  };
+
+
 
   // Show loading state if auth is loading or customer data is not loaded
   if (authLoading || (!isAuthenticated && authLoading)) {
@@ -72,7 +113,7 @@ export default function AccountPage() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading account information...</p>
+          <p className="text-muted-foreground">{t('loading_account_information')}</p>
         </div>
       </div>
     );
@@ -84,7 +125,7 @@ export default function AccountPage() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Redirecting...</p>
+          <p className="text-muted-foreground">{t('redirecting')}</p>
         </div>
       </div>
     );
@@ -93,12 +134,12 @@ export default function AccountPage() {
   return (
     <AccountLayout>
       <div className="bg-card/30 backdrop-blur-md border border-border/50 rounded-xl shadow-xl p-6">
-        <h3 className="text-xl font-semibold text-foreground mb-6">Personal Information</h3>
-        <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4">
+          <h3 className="text-xl font-semibold text-foreground mb-6">{t('personal_info')}</h3>
+          <form onSubmit={handleFormSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
-                First Name
+                {t('first_name')}
               </label>
               <input
                 type="text"
@@ -111,7 +152,7 @@ export default function AccountPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
-                Last Name
+                {t('last_name')}
               </label>
               <input
                 type="text"
@@ -125,7 +166,7 @@ export default function AccountPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">
-              Email
+              {t('email')}
             </label>
             <input
               type="email"
@@ -138,18 +179,19 @@ export default function AccountPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">
-              Phone
+              {t('phone')}
             </label>
             <input
               type="text"
               value={customer?.phone && customer?.country_code ? `+${customer.country_code}${customer.phone}` : ''}
               disabled
-              className="w-full px-3 py-2 border border-border rounded-md bg-muted text-muted-foreground"
+              className="w-full px-3 py-2 border border-border rounded-md bg-muted text-muted-foreground phone-adaptive"
+              dir="ltr"
             />
-            <p className="text-sm text-muted-foreground mt-1">Phone number cannot be changed</p>
+            <p className="text-sm text-muted-foreground mt-1">{t('phone_number_cannot_be_changed')}</p>
           </div>
           <Button type="submit" disabled={isUpdating}>
-            {isUpdating ? 'Updating...' : 'Update Profile'}
+            {isUpdating ? t('updating') : t('update_profile')}
           </Button>
         </form>
       </div>

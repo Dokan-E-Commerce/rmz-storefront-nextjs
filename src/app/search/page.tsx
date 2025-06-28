@@ -5,14 +5,16 @@ import ClientSearchPage from './ClientSearchPage'
 export async function generateMetadata(): Promise<Metadata> {
   const store = await getStoreSSRData()
   
-  const title = `Search Products | ${store?.name || 'Online Store'}`
-  const description = `Search for products at ${store?.name || 'our online store'}. Find exactly what you're looking for with our advanced search and filtering options.`
+  const title = 'البحث عن المنتجات'
+  const description = `ابحث عن المنتجات في ${store?.name || 'متجرنا الإلكتروني'}. ابحث بالضبط عما تريد باستخدام خيارات البحث والتصفية المتقدمة.`
 
   const keywords = [
-    'search',
-    'find products',
-    'product search',
-    'search results',
+    'بحث',
+    'البحث عن المنتجات',
+    'بحث المنتجات',
+    'نتائج البحث',
+    'متجر إلكتروني',
+    'السعودية',
     store?.name,
     store?.seo?.keywords
   ].filter(Boolean).join(', ')

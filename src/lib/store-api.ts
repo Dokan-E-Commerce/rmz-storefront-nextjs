@@ -197,13 +197,48 @@ export const ordersApi = {
     return await sdk.orders.getById(id) as any;
   },
 
-  getSubscriptions: async () => {
-    // TODO: Add getSubscriptions method to SDK if needed
-    return [];
+  getCourses: async () => {
+    const coursesData = await sdk.orders.getCourses() as any;
+    return coursesData.data || coursesData;
   },
 
-  getCourses: async () => {
-    return await sdk.orders.getCourses() as any;
+  getSubscriptions: async () => {
+    const response = await (sdk as any).getSDK().http.get('customer/subscriptions');
+    return response.data.data || response.data;
+  }
+};
+
+// Courses API - Using legacy endpoints that work with current auth
+export const coursesApi = {
+  getAll: async (params?: any) => {
+    const response = await sdk.orders.getCourses() as any;
+    // Handle potential success/data wrapping
+    return response.data || response;
+  },
+
+  getById: async (id: number) => {
+    // Use the customer courses endpoint from OrderController
+    const response = await (sdk as any).getSDK().http.get(`customer/courses/${id}`);
+    // The API wraps the response in a success/data structure
+    return response.data.data || response.data;
+  },
+
+  getProgress: async (courseId: number) => {
+    // Fallback for progress - could be implemented later
+    return { progress: 0, modules: [] };
+  },
+
+  getModule: async (courseId: number, moduleId: number) => {
+    // Use the customer course module endpoint from OrderController
+    const response = await (sdk as any).getSDK().http.get(`customer/courses/${courseId}/modules/${moduleId}`);
+    // The API wraps the response in a success/data structure
+    return response.data.data || response.data;
+  },
+
+  completeModule: async (courseId: number, moduleId: number) => {
+    // Use the customer course module completion endpoint
+    const response = await (sdk as any).getSDK().http.post(`customer/courses/${courseId}/modules/${moduleId}/complete`);
+    return response.data.data || response.data;
   }
 };
 

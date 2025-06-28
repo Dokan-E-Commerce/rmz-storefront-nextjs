@@ -58,7 +58,7 @@ export default function Footer() {
         );
       case 'maroof':
         return (
-          <img src="/maroof.png" alt="Maroof" className="h-6 w-6" />
+          <img src="https://cdn.rmz.gg/maroof.png" alt="Maroof" className="h-6 w-6" />
         );
       default:
         return (
@@ -191,7 +191,7 @@ export default function Footer() {
                 )}
                 {(store as any).contact_info.phone && (
                   <p className="text-sm text-muted-foreground">
-                    <span className="font-medium">{locale === 'ar' ? 'الهاتف:' : 'Phone:'}</span> {(store as any).contact_info.phone}
+                    <span className="font-medium">{locale === 'ar' ? 'الهاتف:' : 'Phone:'}</span> <span className="phone-adaptive" dir="ltr">{(store as any).contact_info.phone}</span>
                   </p>
                 )}
                 {(store as any).contact_info.address && (
@@ -281,9 +281,38 @@ export default function Footer() {
 
         <div className="mt-8 pt-8 border-t border-border/30">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-muted-foreground text-sm">
-              © {new Date().getFullYear()} {(store as any)?.name || 'Digital Store'}. {locale === 'ar' ? 'جميع الحقوق محفوظة' : 'All rights reserved'}.
-            </p>
+            <div className={`text-center ${locale === 'ar' ? 'md:text-right' : 'md:text-left'}`}>
+              <p className="text-muted-foreground text-sm">
+                © {new Date().getFullYear()} {(store as any)?.name || 'Digital Store'}. {locale === 'ar' ? 'جميع الحقوق محفوظة' : 'All rights reserved'}.
+              </p>
+              <p className="text-muted-foreground/70 text-xs mt-1">
+                {locale === 'ar' ? (
+                  <>
+                    صُنع بحب ❤️ على منصة{' '}
+                    <a 
+                      href="https://rmz.gg" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-primary hover:text-primary/80 transition-colors font-medium"
+                    >
+                      رمز
+                    </a>
+                  </>
+                ) : (
+                  <>
+                    Made with ❤️ by{' '}
+                    <a 
+                      href="https://rmz.gg" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-primary hover:text-primary/80 transition-colors font-medium"
+                    >
+                      RMZ.GG
+                    </a>
+                  </>
+                )}
+              </p>
+            </div>
 
             {/* Payment Methods & Trust Badges */}
             <div className="flex flex-col md:flex-row items-center gap-4 mt-4 md:mt-0">

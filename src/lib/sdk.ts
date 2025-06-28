@@ -76,8 +76,23 @@ export class StorefrontSDK {
     return this.sdk.auth;
   }
 
-  get orders() {
-    return this.sdk.orders;
+    get orders() {
+    return {
+      getAll: this.sdk.orders.getAll,
+      getById: this.sdk.orders.getById,
+      getCourses: this.sdk.orders.getCourses,
+      // Add submitReview method since it's missing from the npm version
+      submitReview: async (orderId: number, reviewData: {
+        rating: number;
+        comment: string;
+        item_ratings: Record<string, number>;
+        item_comments: Record<string, string>;
+      }) => {
+        // Use the SDK's HTTP client to make the request with proper HMAC authentication
+        const response = await (this.sdk as any).http.post(`orders/${orderId}/review`, reviewData);
+        return response.data;
+      }
+    };
   }
 
   get checkout() {

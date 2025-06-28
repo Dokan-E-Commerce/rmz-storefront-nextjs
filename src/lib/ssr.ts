@@ -8,6 +8,7 @@ export interface StoreSSRData {
   description?: string
   short_description?: string
   logo?: string
+  favicon?: string
   cover_url?: string
   domain: any
   custom_domain?: string
@@ -18,6 +19,7 @@ export interface StoreSSRData {
   status?: string
   is_maintenance: number | boolean | string
   maintenance_message?: string
+  updated_at?: string
   theme: {
     color: string
     font_family: string
@@ -139,9 +141,7 @@ async function makeServerSideAPICall(endpoint: string, options: RequestInit = {}
  */
 export const getStoreSSRData = cache(async (): Promise<StoreSSRData | null> => {
   try {
-    console.log('Fetching store data for SSR...')
     const storeData = await makeServerSideAPICall('/store')
-    console.log('Store data fetched successfully:', storeData?.name)
     return storeData as StoreSSRData
   } catch (error) {
     return getFallbackStoreData()
@@ -274,14 +274,73 @@ export function generateStoreStructuredData(store: StoreSSRData) {
  * Get favicon URLs for store
  */
 export function getStoreFavicons(store: StoreSSRData) {
-  // If store has logo, use it as favicon (matching legacy behavior)
-  if (store.logo) {
+  // Use store favicon if available, otherwise fallback to logo, then default
+  const faviconUrl = store?.favicon || store?.logo;
+  
+  if (faviconUrl) {
+    // Add cache-busting parameter to force refresh
+    const cacheBuster = store?.updated_at ? `?v=${new Date(store.updated_at).getTime()}` : `?v=${Date.now()}`;
+    const faviconWithCache = `${faviconUrl}${cacheBuster}`;
+    
     return {
+      icon: [
+        {
+          url: faviconWithCache,
+          sizes: '32x32',
+          type: 'image/png',
+        },
+        {
+          url: faviconWithCache,
+          sizes: '16x16', 
+          type: 'image/png',
+        }
+      ],
+      shortcut: faviconWithCache,
+      apple: [
+        {
+          url: faviconWithCache,
+          sizes: '180x180',
+        }
+      ],
+      other: [
+        {
+          rel: 'icon',
+          type: 'image/x-icon',
+          url: faviconWithCache,
+        },
+        {
+          rel: 'apple-touch-icon',
+          url: faviconWithCache,
+          sizes: '180x180',
+        },
+        {
+          rel: 'mask-icon',
+          url: faviconWithCache,
+          color: store?.theme?.color || '#5400db',
+        },
+      ],
     }
   }
   
-  // Fallback to default favicons
+  // Fallback to default favicons with cache busting
+  const defaultCacheBuster = `?v=${Date.now()}`;
   return {
+    icon: [
+      {
+        url: `/favicon.ico${defaultCacheBuster}`,
+        sizes: '32x32',
+        type: 'image/x-icon',
+      }
+    ],
+    shortcut: `/favicon.ico${defaultCacheBuster}`,
+    apple: `/favicon.ico${defaultCacheBuster}`,
+    other: [
+      {
+        rel: 'icon',
+        type: 'image/x-icon',
+        url: `/favicon.ico${defaultCacheBuster}`,
+      },
+    ],
   }
 }
 

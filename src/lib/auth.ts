@@ -206,7 +206,21 @@ export const authApi = {
     return await sdk.auth.getProfile() as unknown as Customer;
   },
 
-  updateProfile: async (data: Partial<Customer>): Promise<Customer> => {
-    return await sdk.auth.updateProfile(data as any) as unknown as Customer;
+  updateProfile: async (data: any): Promise<Customer> => {
+    try {
+
+      // Map form field names to API field names
+      const apiData: any = {};
+      if (data.firstName) apiData.firstName = data.firstName;
+      if (data.lastName) apiData.lastName = data.lastName;
+      if (data.email) apiData.email = data.email;
+      if (data.phone) apiData.phone = data.phone;
+      
+
+      const result = await sdk.auth.updateProfile(apiData);
+      return result as unknown as Customer;
+    } catch (error) {
+      throw error;
+    }
   },
 };

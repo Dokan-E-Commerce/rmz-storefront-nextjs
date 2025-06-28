@@ -72,7 +72,7 @@ export default function CurrencySelector() {
           disabled={isLoading}
           className="flex items-center space-x-2 bg-background/50 backdrop-blur-sm border-border/50 hover:bg-muted/50"
         >
-          <motion.span 
+          <motion.span
             className="text-sm font-medium"
             key={selectedCurrency?.symbol}
             initial={{ opacity: 0, y: 10 }}
@@ -106,14 +106,14 @@ export default function CurrencySelector() {
             />
 
             {/* Dropdown */}
-            <motion.div 
+            <motion.div
               className="absolute right-0 mt-2 w-48 bg-card/95 backdrop-blur-md border border-border/50 rounded-xl shadow-xl z-20 overflow-hidden"
               variants={scaleVariants}
               initial="hidden"
               animate="visible"
               exit="exit"
             >
-              <motion.div 
+              <motion.div
                 className="py-2"
                 variants={staggerContainer}
                 initial="hidden"

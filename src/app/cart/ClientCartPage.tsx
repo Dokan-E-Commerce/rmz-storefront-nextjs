@@ -55,7 +55,7 @@ export default function CartPage() {
   const handleRemoveItem = async (productId: number) => {
     try {
       await removeItem(productId);
-      toast.success('Item removed from cart');
+      toast.success(t('item_removed_from_cart'));
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Error');
     }
@@ -67,7 +67,7 @@ export default function CartPage() {
     try {
       await applyCoupon(couponCode);
       setCouponCode('');
-      toast.success('Coupon applied successfully');
+      toast.success(t('coupon_applied'));
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Error');
     }
@@ -76,9 +76,9 @@ export default function CartPage() {
   const handleRemoveCoupon = async () => {
     try {
       await removeCoupon();
-      toast.success('Coupon removed successfully');
+      toast.success(t('coupon_removed'));
     } catch (error: any) {
-      toast.error('Failed to remove coupon');
+      toast.error(locale === 'ar' ? 'فشل في إزالة الكوبون' : 'Failed to remove coupon');
     }
   };
 
@@ -89,7 +89,7 @@ export default function CartPage() {
 
     // More robust authentication check
     if (!authToken || !userIsAuthenticated) {
-      toast.error('Please log in to continue with checkout');
+      toast.error(locale === 'ar' ? 'يرجى تسجيل الدخول لمتابعة الدفع' : 'Please log in to continue with checkout');
       setIsAuthModalOpen(true);
       return;
     }
@@ -195,7 +195,7 @@ export default function CartPage() {
         <div className="lg:col-span-2">
           <div className="bg-card/30 backdrop-blur-md border border-border/50 rounded-xl shadow-xl overflow-hidden">
             {Object.values(items).map((item) => (
-              <div key={item.id} className="flex items-center p-6 border-b border-border/30 last:border-b-0">
+              <div key={item.id} className="flex items-center p-6 border-b border-border/30 last:border-b-0 space-x-4 rtl:space-x-reverse">
                 <div className="flex-shrink-0 w-20 h-20 bg-muted/50 backdrop-blur-sm rounded-lg overflow-hidden">
                   {(item.product?.image?.full_link || item.image?.full_link) ? (
                     <img
@@ -210,23 +210,63 @@ export default function CartPage() {
                   )}
                 </div>
 
-                <div className="ml-4 flex-1">
+                <div className="flex-1">
                   <h3 className="text-lg font-medium text-foreground">{item.name}</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {item.product.type} • ر.س{typeof item.unit_price === 'string' ? parseFloat(item.unit_price).toFixed(2) : item.unit_price?.toFixed(2) || '0.00'} {locale === 'ar' ? 'للقطعة' : 'each'}
-                  </p>
+
+                  {/* Pricing Breakdown */}
+                  {item.pricing ? (
+                    <div className="text-sm text-muted-foreground mt-1">
+                      <div className="mb-1">
+                        <span>{locale === 'ar' ? 'السعر الأساسي:' : 'Base Price:'} ر.س{item.pricing.formatted.base_price}</span>
+                      </div>
+                      {item.pricing.subscription_price > 0 && (
+                        <div className="mb-1">
+                          <span className="text-blue-600 dark:text-blue-400">
+                            + {item.pricing.formatted.subscription_price} {locale === 'ar' ? '(اشتراك)' : '(Subscription)'}
+                          </span>
+                        </div>
+                      )}
+                      <div className="font-medium">
+                        {locale === 'ar' ? 'الإجمالي:' : 'Total:'} {item.pricing.formatted.unit_total} {locale === 'ar' ? 'للقطعة' : 'each'}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {item.product.type} • ر.س{typeof item.unit_price === 'string' ? parseFloat(item.unit_price).toFixed(2) : item.unit_price?.toFixed(2) || '0.00'} {locale === 'ar' ? 'للقطعة' : 'each'}
+                    </p>
+                  )}
 
                   {/* Custom Fields */}
-                  {item.custom_fields && Object.keys(item.custom_fields).length > 0 && (
+                  {item.custom_fields && item.custom_fields.length > 0 && (
+                    <div className="mt-2">
+                      {item.custom_fields.map((field, index) => (
+                        <div key={index} className="text-sm text-muted-foreground">
+                          <span className="font-medium">{field.name}:</span> {field.value}
+                          {field.price && field.price > 0 && (
+                            <span className="ml-2 text-green-600 dark:text-green-400">(+ر.س{field.price})</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Legacy Custom Fields Support (fallback for old format) */}
+                  {item.custom_fields && typeof item.custom_fields === 'object' && !Array.isArray(item.custom_fields) && Object.keys(item.custom_fields).length > 0 && (
                     <div className="mt-2">
                       {Object.entries(item.custom_fields).map(([key, value], index) => {
-                        // If key is a number (index), try to get field name from product fields
                         const fieldName = isNaN(Number(key)) ? key :
                           (item.product?.fields && item.product.fields[Number(key)]?.name) || `Field ${Number(key) + 1}`;
-
+                        let displayValue = value;
+                        if (typeof value === 'object' && value !== null) {
+                          if ('name' in value && typeof value.name === 'string') {
+                            displayValue = value.name;
+                          } else {
+                            displayValue = JSON.stringify(value);
+                          }
+                        }
                         return (
                           <div key={index} className="text-sm text-muted-foreground">
-                            <span className="font-medium">{fieldName}:{String(value)}</span>
+                            <span className="font-medium">{fieldName}:</span> {String(displayValue)}
                           </div>
                         );
                       })}
@@ -400,7 +440,7 @@ export default function CartPage() {
             try {
               const updatedCart = await fetchCart();
               const itemCount = Object.keys(updatedCart?.items || {}).length;
-              
+
               if (itemCount > 0) {
                 handleCheckout();
               } else {

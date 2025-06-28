@@ -6,8 +6,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const store = await getStoreSSRData()
   
   return {
-    title: `Shopping Cart | ${store?.name || 'Online Store'}`,
-    description: 'Review your cart items before checkout',
+    title: 'سلة التسوق',
+    description: 'راجع منتجات سلة التسوق قبل إتمام الطلب',
     robots: {
       index: false,
       follow: false,

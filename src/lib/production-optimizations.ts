@@ -79,9 +79,7 @@ export const createOptimizedFetch = () => {
 // Bundle size optimization
 export const removeUnusedImports = () => {
   // This function helps identify unused imports in development
-  if (isDevelopment) {
-    console.log('🔍 Development mode: Check for unused imports');
-  }
+  // No console logs in production
 };
 
 // Memory management

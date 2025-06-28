@@ -84,8 +84,8 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
     queryKey: ['product-reviews', product?.id],
     queryFn: ({ pageParam = 1 }) => {
       if (!product?.id) return Promise.resolve({ data: [], pagination: { current_page: 1, last_page: 1 } });
-      return sdk.products.getReviews(product.id, { 
-        page: pageParam, 
+      return sdk.products.getReviews(product.id, {
+        page: pageParam,
         per_page: 6
       });
     },
@@ -119,7 +119,7 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
   // Calculate review stats - Note: rating distribution is based on loaded reviews only
   const reviewStats = useMemo(() => {
     const totalReviews = totalReviewCount;
-    
+
     if (!totalReviews || totalReviews === 0) {
       return {
         data: {
@@ -132,10 +132,10 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
     }
 
     // Use product's rating if available, otherwise calculate from loaded reviews
-    const productAverageRating = product?.rating ? Number(product.rating) : 
+    const productAverageRating = product?.rating ? Number(product.rating) :
       (allReviews.length > 0 ?
         allReviews.reduce((acc, review) => acc + (Number(review.rating) || 0), 0) / allReviews.length : 0);
-    
+
     // Calculate rating distribution from loaded reviews only
     const ratingDistribution = allReviews.reduce((dist, review) => {
       const rating = review.rating?.toString() || '1';
@@ -154,12 +154,14 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
   }, [allReviews, totalReviewCount, product?.rating]);
 
   const calculatedPrice = useMemo(() => {
-    if (!product) return { total: 0, formatted: formatPriceSafe(0), basePrice: 0, fieldPriceAddition: 0, unitPrice: 0 };
+    if (!product) return { total: 0, formatted: formatPriceSafe(0), basePrice: 0, fieldPriceAddition: 0, subscriptionPrice: 0, unitPrice: 0 };
 
-    let basePrice = Number(product.price.actual) || 0;
+    const basePrice = Number(product.price.actual) || 0;
+    let subscriptionPrice = 0;
 
+    // For subscription products, add the subscription variant price to the base price
     if (selectedVariant) {
-      basePrice = Number(selectedVariant.price) || 0;
+      subscriptionPrice = Number(selectedVariant.price) || 0;
     }
 
     let fieldPriceAddition = 0;
@@ -172,11 +174,12 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
       });
     }
 
-    const unitPrice = basePrice + fieldPriceAddition;
+    const unitPrice = basePrice + subscriptionPrice + fieldPriceAddition;
     const totalPrice = unitPrice * quantity;
 
     return {
       basePrice: Number(basePrice) || 0,
+      subscriptionPrice: Number(subscriptionPrice) || 0,
       fieldPriceAddition: Number(fieldPriceAddition) || 0,
       unitPrice: Number(unitPrice) || 0,
       total: Number(totalPrice) || 0,
@@ -186,7 +189,7 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
 
   if (productLoading) {
     return (
-      <motion.div 
+      <motion.div
         className="min-h-screen bg-background"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -214,7 +217,7 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
 
   if (error || !product) {
     return (
-      <motion.div 
+      <motion.div
         className="min-h-screen bg-background flex items-center justify-center"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -253,7 +256,8 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
       );
       toast.success('Product added to cart');
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'An error occurred');
+      const errorMessage = error.message || error.response?.data?.message || 'An error occurred';
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -282,7 +286,8 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
         toast.success(locale === 'ar' ? 'تم الإضافة للمفضلة' : 'Added to wishlist');
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to update wishlist');
+      const errorMessage = error.message || error.response?.data?.message || 'Failed to update wishlist';
+      toast.error(errorMessage);
     } finally {
       setIsWishlistLoading(false);
     }
@@ -316,9 +321,9 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
     }
   };
 
-  
+
   // Use product's overall rating if available, otherwise calculate from loaded reviews
-  const averageRating = product?.rating ? Number(product.rating) : 
+  const averageRating = product?.rating ? Number(product.rating) :
     (allReviews.length > 0 ?
       allReviews.reduce((acc: number, review: any) => acc + (Number(review.rating) || 0), 0) / allReviews.length : 0);
 
@@ -362,36 +367,37 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
         return;
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'An error occurred');
+      const errorMessage = error.message || error.response?.data?.message || 'An error occurred';
+      toast.error(errorMessage);
     } finally {
       setIsQuickPurchasing(false);
     }
   };
 
   return (
-    <motion.div 
+    <motion.div
       className="min-h-screen bg-background"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-        <motion.nav 
-          className="flex mb-8" 
+        <motion.nav
+          className="flex mb-8"
           aria-label="Breadcrumb"
           variants={fadeInUp}
           initial="hidden"
           animate="visible"
         >
-          <motion.ol 
+          <motion.ol
             className="flex items-center space-x-4"
             variants={staggerContainer}
             initial="hidden"
             animate="visible"
           >
             <motion.li variants={fadeInUp}>
-              <motion.a 
-                href="/" 
+              <motion.a
+                href="/"
                 className="text-muted-foreground hover:text-foreground transition-colors"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -403,8 +409,8 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
               <span className="text-muted-foreground">/</span>
             </motion.li>
             <motion.li variants={fadeInUp}>
-              <motion.a 
-                href="/products" 
+              <motion.a
+                href="/products"
                 className="text-muted-foreground hover:text-foreground transition-colors"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -421,17 +427,17 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
           </motion.ol>
         </motion.nav>
 
-        <motion.div 
+        <motion.div
           className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8 lg:mb-12"
           variants={staggerContainer}
           initial="hidden"
           animate="visible"
         >
-          <motion.div 
+          <motion.div
             className="space-y-4"
             variants={fadeInUp}
           >
-            <motion.div 
+            <motion.div
               className="aspect-square bg-card/30 backdrop-blur-md border border-border/50 rounded-lg overflow-hidden"
               whileHover={{ scale: 1.02 }}
               transition={{ type: "spring", stiffness: 300, damping: 20 }}
@@ -450,7 +456,7 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
                     transition={{ duration: 0.3 }}
                   />
                 ) : (
-                  <motion.div 
+                  <motion.div
                     key="placeholder"
                     className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-muted/30 to-muted/50 border-2 border-dashed border-border/40"
                     initial={{ opacity: 0 }}
@@ -466,7 +472,7 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
                     >
                       <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
                     </motion.svg>
-                    <motion.span 
+                    <motion.span
                       className="text-muted-foreground/70 text-center px-4"
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -480,7 +486,7 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
             </motion.div>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             className="space-y-6"
             variants={fadeInUp}
           >
@@ -489,7 +495,7 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
               initial="hidden"
               animate="visible"
             >
-              <motion.h1 
+              <motion.h1
                 className="text-3xl font-bold text-foreground mb-2"
                 variants={fadeInUp}
               >
@@ -497,14 +503,14 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
               </motion.h1>
               <AnimatePresence>
                 {product.marketing_title && product.marketing_title !== product.name && (
-                  <motion.div 
+                  <motion.div
                     className="mb-3"
                     variants={fadeInUp}
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
                   >
-                    <motion.span 
+                    <motion.span
                       className="inline-block px-4 py-2 bg-gradient-to-r from-primary/20 to-primary/10 text-primary border border-primary/30 rounded-full text-sm font-medium backdrop-blur-sm"
                       whileHover={{ scale: 1.05, y: -2 }}
                       transition={{ type: "spring", stiffness: 400, damping: 17 }}
@@ -605,6 +611,117 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
               {product.type.charAt(0).toUpperCase() + product.type.slice(1)} {locale === 'ar' ? 'منتج' : 'Product'}
             </div>
 
+                        {/* Course Information */}
+            {product.type === 'course' && product.course && (
+              <div className="bg-card/30 backdrop-blur-md border border-border/50 rounded-xl shadow-xl p-6 mb-6">
+                <h3 className="text-xl font-semibold text-foreground mb-4 flex items-center">
+                  <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                  {locale === 'ar' ? 'تفاصيل الدورة' : 'Course Details'}
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  {/* Instructor */}
+                  <div className="flex items-center bg-muted/30 backdrop-blur-sm border border-border/30 rounded-lg p-4">
+                    <div className="bg-primary/20 rounded-full p-2 mr-3">
+                      <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground font-medium">
+                        {locale === 'ar' ? 'المدرب' : 'Instructor'}
+                      </p>
+                      <p className="text-foreground font-semibold">{product.course.instructor}</p>
+                    </div>
+                  </div>
+
+                  {/* Level */}
+                  <div className="flex items-center bg-muted/30 backdrop-blur-sm border border-border/30 rounded-lg p-4">
+                    <div className="bg-primary/20 rounded-full p-2 mr-3">
+                      <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground font-medium">
+                        {locale === 'ar' ? 'المستوى' : 'Level'}
+                      </p>
+                      <p className="text-foreground font-semibold">
+                        {locale === 'ar' ? product.course.level_arabic : product.course.level.charAt(0).toUpperCase() + product.course.level.slice(1)}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Course Stats */}
+                  <div className="flex items-center bg-muted/30 backdrop-blur-sm border border-border/30 rounded-lg p-4">
+                    <div className="bg-primary/20 rounded-full p-2 mr-3">
+                      <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground font-medium">
+                        {locale === 'ar' ? 'عدد الدروس' : 'Modules'}
+                      </p>
+                      <p className="text-foreground font-semibold">
+                        {product.course.total_modules || 0} {locale === 'ar' ? 'درس' : 'modules'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Course Curriculum */}
+                {product.course.sections && product.course.sections.length > 0 && (
+                  <div>
+                    <h4 className="text-lg font-semibold text-foreground mb-4 flex items-center">
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                      {locale === 'ar' ? 'منهج الدورة' : 'Course Curriculum'}
+                    </h4>
+                    <div className="space-y-3">
+                      {product.course.sections.map((section, index) => (
+                        <div key={section.id} className="bg-muted/20 backdrop-blur-sm border border-border/30 rounded-lg overflow-hidden">
+                          <div className="p-4 bg-muted/30 border-b border-border/30">
+                            <h5 className="font-semibold text-foreground flex items-center">
+                              <span className="bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3">
+                                {index + 1}
+                              </span>
+                              {section.title}
+                            </h5>
+                            {section.description && (
+                              <p className="text-muted-foreground text-sm mt-1 mr-9">{section.description}</p>
+                            )}
+                          </div>
+                          {section.modules && section.modules.length > 0 && (
+                            <div className="p-4">
+                              <div className="space-y-2">
+                                {section.modules.map((module, moduleIndex) => (
+                                  <div key={module.id} className="flex items-center text-sm">
+                                    <svg className="w-4 h-4 text-primary mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h1m4 0h1m6-10V7a3 3 0 11-6 0V4h6zM4 20h16" />
+                                    </svg>
+                                    <span className="text-foreground flex-1">{module.title}</span>
+                                    {module.duration_minutes > 0 && (
+                                      <span className="text-muted-foreground text-xs bg-muted/30 px-2 py-1 rounded">
+                                        {module.duration_minutes} {locale === 'ar' ? 'دقيقة' : 'min'}
+                                      </span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {product.subscription_variants && product.subscription_variants.length > 0 && (
               <div>
                 <h3 className="text-lg font-medium text-foreground mb-3">
@@ -627,10 +744,24 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
                       <div className="flex-1">
                         <div className="flex justify-between items-center">
                           <span className="font-medium">
-                            {variant.duration} {locale === 'ar' ? 'يوم' : 'days'}
+                            {locale === 'ar' ? (variant.duration_text || variant.duration) : (variant.duration_text_en || variant.duration)}
                           </span>
-                          <span className="text-lg font-bold">{variant.formatted_price}</span>
+                          <span className="text-lg font-bold">{formatPriceSafe(variant.price)}</span>
                         </div>
+                        {variant.features && variant.features.length > 0 && (
+                          <div className="mt-2">
+                            <ul className="text-sm text-muted-foreground space-y-1">
+                              {variant.features.map((feature) => (
+                                <li key={feature.id} className="flex items-center">
+                                  <svg className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                  {feature.name}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                       </div>
                     </label>
                   ))}
@@ -788,6 +919,12 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
                     <span>{locale === 'ar' ? 'السعر الأساسي:' : 'Base Price:'}</span>
                     <span>{formatPrice(calculatedPrice.basePrice)}</span>
                   </div>
+                  {calculatedPrice.subscriptionPrice > 0 && (
+                    <div className="flex justify-between">
+                      <span>{locale === 'ar' ? 'خطة الاشتراك:' : 'Subscription Plan:'}</span>
+                      <span>+{formatPrice(calculatedPrice.subscriptionPrice)}</span>
+                    </div>
+                  )}
                   {calculatedPrice.fieldPriceAddition > 0 && (
                     <div className="flex justify-between">
                       <span>{locale === 'ar' ? 'الخيارات:' : 'Options:'}</span>
@@ -874,13 +1011,13 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
                         </span>
                       </div>
                       <p className="text-muted-foreground">
-                        {locale === 'ar' 
+                        {locale === 'ar'
                           ? `بناءً على ${reviewStats.data.total_reviews} تقييم`
                           : `Based on ${reviewStats.data.total_reviews} reviews`
                         }
                       </p>
                     </div>
-                    
+
                     {/* Rating Breakdown */}
                     <div className="space-y-2">
                       {[5, 4, 3, 2, 1].map((rating) => (
@@ -905,7 +1042,7 @@ export default function ClientProductPage({ slug, initialProduct }: ClientProduc
                       ))}
                       {reviewStats.data.loaded_reviews_count < reviewStats.data.total_reviews && (
                         <p className="text-xs text-muted-foreground mt-2">
-                          {locale === 'ar' ? 
+                          {locale === 'ar' ?
                             `* التوزيع بناءً على ${reviewStats.data.loaded_reviews_count} من أصل ${reviewStats.data.total_reviews} تقييم` :
                             `* Distribution based on ${reviewStats.data.loaded_reviews_count} of ${reviewStats.data.total_reviews} reviews`
                           }

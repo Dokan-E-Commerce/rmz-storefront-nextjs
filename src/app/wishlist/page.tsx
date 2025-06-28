@@ -6,8 +6,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const store = await getStoreSSRData()
   
   return {
-    title: `Wishlist | ${store?.name || 'Online Store'}`,
-    description: 'Your saved items and favorites',
+    title: 'قائمة الأمنيات',
+    description: 'العناصر المحفوظة والمفضلة لديك',
     robots: {
       index: false,
       follow: false,

@@ -163,7 +163,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
       toast.success(
         <div style={{ direction: 'rtl' }}>
           {t('verification_code_sent')}{' '}
-          <span style={{ direction: 'ltr', display: 'inline-block' }}>{phoneValue}</span>
+          <span className="phone-adaptive" style={{ direction: 'ltr', display: 'inline-block' }}>{phoneValue}</span>
         </div>
       );
     } catch (error: any) {
@@ -457,7 +457,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                   <div>
                     <p className="text-muted-foreground text-center mb-6">
                       {t('verification_code_sent')} <br />
-                      <span className="font-medium text-foreground">{phoneNumber || phoneValue || 'No phone number found'}</span>
+                      <span className="font-medium text-foreground phone-adaptive" dir="ltr">{phoneNumber || phoneValue || 'No phone number found'}</span>
                     </p>
                     <div className="space-y-6">
                       <div>

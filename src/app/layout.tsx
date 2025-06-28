@@ -7,7 +7,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import MobileTabBar from '@/components/layout/MobileTabBar';
 import { Toaster } from 'sonner';
-import { LanguageProvider } from '@/components/LanguageProvider';
+import ClientLanguageProvider from '@/components/ClientLanguageProvider';
 import { StoreProvider } from '@/components/StoreProvider';
 import { getStoreSSRData, generateStoreMetaTags, generateStoreStructuredData, getStoreFavicons } from '@/lib/ssr';
 import MaintenanceWrapper from '@/components/MaintenanceWrapper';
@@ -28,17 +28,18 @@ const notoSansArabic = Noto_Sans_Arabic({
 // Dynamic metadata generation based on store data
 export async function generateMetadata(): Promise<Metadata> {
   const store = await getStoreSSRData();
+  
+  // Generate favicons regardless of store availability
+  const favicons = getStoreFavicons(store);
 
   if (!store) {
     // Fallback metadata if store data is not available
     return {
-      icons: {
-      },
+      icons: favicons,
     };
   }
 
   const metaTags = generateStoreMetaTags(store);
-  const favicons = getStoreFavicons(store);
 
   return {
     title: {
@@ -48,6 +49,7 @@ export async function generateMetadata(): Promise<Metadata> {
     alternates: {
       canonical: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
     },
+    icons: favicons,
     appleWebApp: {
       capable: true,
       statusBarStyle: 'default',
@@ -136,8 +138,8 @@ export default async function RootLayout({
         {/* Google Tag Manager (noscript) - TODO: Add back when SEO settings are available in API */}
 
         <StoreProvider store={store}>
-          <LanguageProvider initialLanguage={store?.language}>
-            <Providers>
+          <Providers>
+            <ClientLanguageProvider initialLanguage={store?.language}>
               <MaintenanceWrapper>
                 <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-muted/20 text-foreground relative overflow-hidden">
                   {/* Liquid Glass Background Pattern */}
@@ -161,8 +163,8 @@ export default async function RootLayout({
               <GlobalModals />
               <FacebookPixel />
               <GoogleTagManager />
-            </Providers>
-          </LanguageProvider>
+            </ClientLanguageProvider>
+          </Providers>
         </StoreProvider>
       </body>
     </html>

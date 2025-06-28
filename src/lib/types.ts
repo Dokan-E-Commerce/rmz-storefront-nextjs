@@ -14,6 +14,7 @@ export interface Store {
   name: string;
   description?: string;
   logo?: string;
+  favicon?: string;
   cover?: string;
   domain: string;
   custom_domain?: string;
@@ -93,6 +94,7 @@ export interface Product {
   categories: Category[];
   subscription_variants?: SubscriptionVariant[];
   fields?: ProductField[];
+  course?: CourseInfo;
   meta?: Record<string, any>;
   metadata?: string;
   tags?: string[];
@@ -103,6 +105,35 @@ export interface Product {
   };
   created_at: string;
   updated_at: string;
+}
+
+export interface CourseInfo {
+  id: number;
+  instructor: string;
+  level: 'beginner' | 'intermediate' | 'advanced';
+  level_arabic: string;
+  sections?: CourseSection[];
+  total_modules?: number;
+  estimated_duration?: number;
+}
+
+export interface CourseSection {
+  id: number;
+  title: string;
+  description?: string;
+  sort_index: number;
+  modules: CourseModule[];
+}
+
+export interface CourseModule {
+  id: number;
+  title: string;
+  description?: string;
+  type: string;
+  content?: string;
+  video_uri?: string;
+  sort_index: number;
+  duration_minutes?: number;
 }
 
 export interface SubscriptionVariant {
@@ -160,7 +191,24 @@ export interface CartItem {
   quantity: number;
   unit_price: number;
   total_price: number;
-  custom_fields?: any;
+  pricing?: {
+    base_price: number;
+    addons_price: number;
+    subscription_price: number;
+    unit_total: number;
+    formatted: {
+      base_price: string;
+      addons_price?: string | null;
+      subscription_price?: string | null;
+      unit_total: string;
+      total_price: string;
+    };
+  };
+  custom_fields?: Array<{
+    name: string;
+    value: string;
+    price: number | null;
+  }> | any; // Keep any for backward compatibility
   subscription_plan?: SubscriptionVariant;
   notice?: string;
   product: Partial<Product>;

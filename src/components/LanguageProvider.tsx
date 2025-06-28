@@ -16,7 +16,7 @@ const SUPPORTED_LOCALES = ['en', 'ar'];
 
 interface LanguageProviderProps {
   children: React.ReactNode;
-  initialLanguage?: string; // Add initial language prop from server
+  initialLanguage?: string;
 }
 
 // Function to update document attributes immediately
@@ -30,52 +30,39 @@ function updateDocumentAttributes(locale: string) {
 }
 
 export function LanguageProvider({ children, initialLanguage }: LanguageProviderProps) {
-  // Start with server-provided language or default to prevent hydration mismatch
+  // Use server language as initial value to prevent hydration mismatch
   const serverLanguage = initialLanguage && SUPPORTED_LOCALES.includes(initialLanguage)
     ? initialLanguage
     : DEFAULT_LOCALE;
 
+  // Initialize with server language, will be updated client-side
   const [locale, setLocaleState] = useState<string>(serverLanguage);
-  const [isHydrated, setIsHydrated] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   const isRTL = locale === 'ar';
 
-  // Mount effect to ensure component is ready
+  // Client-side initialization after mount
   useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  // Initialize client-side locale after hydration
-  useEffect(() => {
-    if (!isMounted) return;
+    setMounted(true);
     
-    let targetLocale = serverLanguage;
-
-    // Check localStorage for user preference only after hydration
+    // Check localStorage for saved preference
     try {
       const savedLocale = localStorage.getItem(STORAGE_KEY);
       if (savedLocale && SUPPORTED_LOCALES.includes(savedLocale)) {
-        targetLocale = savedLocale;
+        if (savedLocale !== serverLanguage) {
+          setLocaleState(savedLocale);
+        }
       }
     } catch (e) {
       // Ignore localStorage errors
     }
-
-    // Only update if different from current state to prevent unnecessary re-renders
-    if (targetLocale !== locale) {
-      setLocaleState(targetLocale);
-    }
-
-    updateDocumentAttributes(targetLocale);
-    setIsHydrated(true);
-  }, [isMounted, serverLanguage]); // Add isMounted dependency
+  }, [serverLanguage]);
 
   // Update document attributes when locale changes
   useEffect(() => {
-    if (isHydrated && isMounted) {
+    if (mounted) {
       updateDocumentAttributes(locale);
-
+      
       // Save to localStorage
       try {
         localStorage.setItem(STORAGE_KEY, locale);
@@ -83,17 +70,12 @@ export function LanguageProvider({ children, initialLanguage }: LanguageProvider
         // Ignore localStorage errors
       }
     }
-  }, [locale, isHydrated, isMounted]);
+  }, [locale, mounted]);
 
   const setLocale = (newLocale: string) => {
     if (!SUPPORTED_LOCALES.includes(newLocale)) return;
     setLocaleState(newLocale);
   };
-
-  // Don't render children until mounted to prevent hydration issues
-  if (!isMounted) {
-    return children as React.ReactElement;
-  }
 
   return (
     <LanguageContext.Provider value={{ locale, setLocale, isRTL }}>

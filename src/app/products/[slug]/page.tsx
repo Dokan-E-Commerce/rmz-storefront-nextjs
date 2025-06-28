@@ -30,18 +30,24 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     
     const productTitle = product.marketing_title || product.name
     const productDescription = product.short_description || 
-      (product.description ? product.description.replace(/<[^>]*>/g, '').substring(0, 160) + '...' : `${productTitle} - Available at ${store.name}`)
+      (product.description ? product.description.replace(/<[^>]*>/g, '').substring(0, 160) + '...' : `${productTitle} - متوفر في ${store.name}`)
     
     const metaTags = generateStoreMetaTags(store, `/products/${slug}`)
     
     return {
+      title: {
+        absolute: productTitle,
+      },
+      description: productDescription,
       keywords: [
         productTitle,
         ...product.categories?.map((cat: any) => cat.name) || [],
         product.type,
         store.name,
-        'buy online',
-        'digital product'
+        'شراء اونلاين',
+        'منتج رقمي',
+        'متجر إلكتروني',
+        'السعودية'
       ].join(', '),
       openGraph: {
         ...metaTags.openGraph,

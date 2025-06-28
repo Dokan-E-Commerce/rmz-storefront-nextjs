@@ -29,21 +29,24 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
     }
     
     const categoryTitle = category.name
-    const categoryDescription = category.description || `Browse ${category.name} products at ${store.name}. Find the best digital products, courses, and subscriptions.`
+    const categoryDescription = category.description || `تصفح منتجات ${category.name} في ${store.name}. اكتشف أفضل المنتجات الرقمية والدورات والاشتراكات.`
     
     const metaTags = generateStoreMetaTags(store, `/categories/${slug}`)
     
     return {
+      title: categoryTitle,
+      description: categoryDescription,
       keywords: [
         categoryTitle,
-        'products',
-        'category',
-        'browse',
+        'منتجات',
+        'تصنيف',
+        'تصفح',
         store.name,
-        'buy online',
-        'digital products',
-        'courses',
-        'subscriptions'
+        'شراء اونلاين',
+        'منتجات رقمية',
+        'دورات',
+        'اشتراكات',
+        'السعودية'
       ].join(', '),
       openGraph: {
         ...metaTags.openGraph,
