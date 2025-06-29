@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState } from 'react';
+import { use, useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { coursesApi } from '@/lib/store-api';
 import Link from 'next/link';
@@ -58,6 +58,45 @@ export default function CourseDetailClient({ params }: CourseDetailClientProps) 
     enabled: isAuthenticated && selectedModule !== null,
   });
 
+  // Use actual course sections and modules from API
+  const courseSections = course?.course?.sections || [];
+  
+  // Flatten modules from all sections for the module list
+  const courseModules = courseSections.flatMap((section: any) => 
+    section.modules?.map((module: any) => ({
+      id: module.id,
+      title: module.title,
+      description: module.description,
+      content: module.content,
+      video_url: module.video_url || module.video_uri, // Support both field names
+      type: module.type,
+      duration_minutes: module.duration_minutes || 15,
+      sort_index: module.sort_index,
+      section_id: section.id,
+      section_title: section.title
+    })) || []
+  );
+
+  // Only use fallback if we have no sections AND no modules
+  const hasRealSections = courseSections.length > 0;
+  const hasRealModules = courseModules.length > 0;
+  
+  const modules = hasRealModules ? courseModules : Array.from({ length: course?.course?.total_modules || 5 }, (_, i) => ({
+    id: i + 1,
+    title: `Module ${i + 1}: Course Content`,
+    description: 'Learn the basics and fundamentals',
+    duration_minutes: 15,
+    sort_index: i + 1,
+    section_title: 'Course Content'
+  }));
+
+  // Auto-select first module when course loads
+  useEffect(() => {
+    if (!selectedModule && modules.length > 0) {
+      setSelectedModule(modules[0].id);
+    }
+  }, [modules, selectedModule]);
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-muted/20">
@@ -111,37 +150,7 @@ export default function CourseDetailClient({ params }: CourseDetailClientProps) 
     );
   }
 
-  // Use actual course sections and modules from API
-  const courseSections = course.course?.sections || [];
-  
-  // Flatten modules from all sections for the module list
-  const courseModules = courseSections.flatMap((section: any) => 
-    section.modules?.map((module: any) => ({
-      id: module.id,
-      title: module.title,
-      description: module.description,
-      content: module.content,
-      video_url: module.video_url,
-      type: module.type,
-      duration_minutes: module.duration_minutes || 15,
-      sort_index: module.sort_index,
-      section_id: section.id,
-      section_title: section.title
-    })) || []
-  );
 
-  // Only use fallback if we have no sections AND no modules
-  const hasRealSections = courseSections.length > 0;
-  const hasRealModules = courseModules.length > 0;
-  
-  const modules = hasRealModules ? courseModules : Array.from({ length: course?.course?.total_modules || 5 }, (_, i) => ({
-    id: i + 1,
-    title: `Module ${i + 1}: Course Content`,
-    description: 'Learn the basics and fundamentals',
-    duration_minutes: 15,
-    sort_index: i + 1,
-    section_title: 'Course Content'
-  }));
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-muted/20">
@@ -268,7 +277,7 @@ export default function CourseDetailClient({ params }: CourseDetailClientProps) 
                     <div className="divide-y divide-border/30">
                       {section.modules?.map((module: any, moduleIndex: number) => {
                         const isCompleted = course?.completed_modules?.includes(module.id) || false;
-                        const isAccessible = course?.can_access && (moduleIndex === 0 || course?.completed_modules?.includes(section.modules[moduleIndex - 1]?.id));
+                        const isAccessible = true; // Make all modules accessible for better UX
                         
                         return (
                           <div 
@@ -323,7 +332,7 @@ export default function CourseDetailClient({ params }: CourseDetailClientProps) 
                   <div className="space-y-2">
                     {modules.map((module, index) => {
                       const isCompleted = course?.completed_modules?.includes(module.id) || false;
-                      const isAccessible = course?.can_access && (index === 0 || course?.completed_modules?.includes(modules[index - 1]?.id));
+                      const isAccessible = true; // Make all modules accessible for better UX
                      
                      return (
                        <div 
@@ -387,7 +396,12 @@ export default function CourseDetailClient({ params }: CourseDetailClientProps) 
                     <div className="space-y-6">
                       {/* Get the selected module data */}
                       {(() => {
-                        const currentModule = courseModules.find(m => m.id === selectedModule);
+                        // First try to get module from API moduleData, then fallback to courseModules
+                        const currentModule = moduleData?.module || courseModules.find(m => m.id === selectedModule);
+                        
+                        console.log('Current module data:', currentModule);
+                        console.log('Video URL:', currentModule?.video_url || currentModule?.video_uri);
+                        
                         if (!currentModule) return null;
                         
                         return (
@@ -414,7 +428,7 @@ export default function CourseDetailClient({ params }: CourseDetailClientProps) 
 
                             {/* Module Content */}
                             <div className="mb-6">
-                              {currentModule.type === 'media' && currentModule.video_url ? (
+                              {currentModule.type === 'media' && (currentModule.video_url || currentModule.video_uri) ? (
                                 // Video Content
                                 <div className="bg-muted/20 rounded-lg p-6 border border-border/30">
                                   <h4 className="font-medium text-foreground mb-4 flex items-center">
@@ -425,10 +439,19 @@ export default function CourseDetailClient({ params }: CourseDetailClientProps) 
                                     <video 
                                       controls 
                                       className="w-full h-full"
-                                      poster="/api/placeholder/800/450"
+                                      preload="metadata"
+                                      controlsList="nodownload"
+                                      onError={(e) => console.error('Video failed to load:', e)}
+                                      onLoadStart={() => console.log('Video started loading')}
                                     >
-                                      <source src={currentModule.video_url} type="video/mp4" />
-                                      Your browser does not support the video tag.
+                                      <source src={currentModule.video_url || currentModule.video_uri} type="video/mp4" />
+                                      <p className="text-white p-4">
+                                        Your browser does not support the video tag.
+                                        <br />
+                                        <a href={currentModule.video_url || currentModule.video_uri} className="text-blue-400 underline">
+                                          Download the video instead
+                                        </a>
+                                      </p>
                                     </video>
                                   </div>
                                 </div>

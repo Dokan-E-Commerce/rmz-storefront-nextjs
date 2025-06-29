@@ -414,23 +414,6 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
                           'QA', // Qatar
                           'BH', // Bahrain
                           'OM', // Oman
-                          // Other Arab Countries
-                          'EG', // Egypt
-                          'JO', // Jordan
-                          'LB', // Lebanon
-                          'IQ', // Iraq
-                          'YE', // Yemen
-                          'SY', // Syria
-                          'PS', // Palestine
-                          'MA', // Morocco
-                          'DZ', // Algeria
-                          'TN', // Tunisia
-                          'LY', // Libya
-                          'SD', // Sudan
-                          'MR', // Mauritania
-                          'DJ', // Djibouti
-                          'SO', // Somalia
-                          'KM', // Comoros
                         ]}
                         value={phoneValue}
                         onChange={handlePhoneChange}
