@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { OTPInput } from '@/components/ui/otp-input';
 import { authApi, useAuth } from '@/lib/auth';
 import { useCart } from '@/lib/cart';
+import { sdk } from '@/lib/sdk';
 import { toast } from 'sonner';
 import { devLog, devWarn } from '@/lib/console-branding';
 import { XMarkIcon } from '@heroicons/react/24/outline';
@@ -207,8 +208,12 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
       }
 
       // Ensure cart token is synced before authentication
-      const { syncCartToken } = useCart.getState();
+      const { syncCartToken, items: guestCartItems } = useCart.getState();
       syncCartToken();
+
+      // Store guest cart items before authentication
+      const guestItems = Object.values(guestCartItems);
+      devLog('🔐 AuthModal: Guest cart items before auth:', guestItems.length);
 
       const response = await authApi.verifyOTP(data.otp, sessionToken);
 
@@ -220,22 +225,49 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
         devLog('🔐 AuthModal: Authentication successful, cart_token:', response.cart_token?.substring(0, 10) + '...');
         setAuth(response.token, response.customer);
 
-        // Handle cart after authentication - preserve guest cart
-        const { cart_token: guestCartToken, fetchCart } = useCart.getState();
+        // Handle cart after authentication - implement client-side merging
+        const { cart_token: guestCartToken, fetchCart, setCartToken } = useCart.getState();
         devLog('🔐 AuthModal: Guest cart token before auth:', guestCartToken?.substring(0, 10) + '...');
         devLog('🔐 AuthModal: Auth response cart token:', response.cart_token?.substring(0, 10) + '...');
         
-        // Keep using the guest cart token - the backend should merge carts server-side
-        // Don't overwrite the guest cart token with the auth response token
-        if (guestCartToken) {
-          devLog('🔐 AuthModal: Preserving guest cart token and fetching updated cart');
-          // Just fetch the cart - the backend should have merged it with the user's account
-          fetchCart().catch(devWarn);
-        } else if (response.cart_token) {
-          // Only set the auth cart token if we don't have a guest cart
-          const { setCartToken } = useCart.getState();
-          devLog('🔐 AuthModal: No guest cart, using auth response cart token');
+        // Use the authenticated user's cart token if available
+        if (response.cart_token) {
+          devLog('🔐 AuthModal: Setting authenticated user cart token');
           setCartToken(response.cart_token);
+          
+          // Fetch the user's cart to see if it's empty
+          try {
+            await fetchCart();
+            const { items: userCartItems } = useCart.getState();
+            const userItemsCount = Object.keys(userCartItems).length;
+            
+            devLog('🔐 AuthModal: User cart items after fetch:', userItemsCount);
+            devLog('🔐 AuthModal: Guest cart items to merge:', guestItems.length);
+            
+            // If user cart is empty but we had guest items, merge them
+            if (userItemsCount === 0 && guestItems.length > 0) {
+              devLog('🔐 AuthModal: Merging guest cart items into user cart');
+              
+              // Add each guest item to the user's cart using the SDK directly
+              for (const guestItem of guestItems) {
+                try {
+                  await sdk.cart.addItem(guestItem.product_id, guestItem.quantity);
+                  devLog('🔐 AuthModal: Added guest item to user cart:', guestItem.product_id);
+                } catch (error) {
+                  devWarn('🔐 AuthModal: Failed to add guest item:', guestItem.product_id, error);
+                }
+              }
+              
+              // Fetch cart again to get the updated state
+              await fetchCart();
+              devLog('🔐 AuthModal: Cart merge completed');
+            }
+          } catch (error) {
+            devWarn('🔐 AuthModal: Error during cart merging:', error);
+          }
+        } else if (guestCartToken) {
+          // Fallback: keep using guest cart if no user cart token
+          devLog('🔐 AuthModal: No user cart token, keeping guest cart');
           fetchCart().catch(devWarn);
         }
 
@@ -279,28 +311,61 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
     setIsLoading(true);
     try {
       // Ensure cart token is synced before registration
-      const { syncCartToken } = useCart.getState();
+      const { syncCartToken, items: guestCartItems } = useCart.getState();
       syncCartToken();
+      
+      // Store guest cart items before registration
+      const guestItems = Object.values(guestCartItems);
+      devLog('🔐 AuthModal: Guest cart items before registration:', guestItems.length);
       
       const response = await authApi.completeRegistration(data as any, sessionToken);
       if (response.token && response.customer) {
         devLog('🔐 AuthModal: Registration successful, cart_token:', response.cart_token?.substring(0, 10) + '...');
         setAuth(response.token, response.customer);
         
-        // Handle cart after registration - preserve guest cart
-        const { cart_token: guestCartToken, fetchCart } = useCart.getState();
+        // Handle cart after registration - implement client-side merging
+        const { cart_token: guestCartToken, fetchCart, setCartToken } = useCart.getState();
         devLog('🔐 AuthModal: Guest cart token before registration:', guestCartToken?.substring(0, 10) + '...');
         devLog('🔐 AuthModal: Registration response cart token:', response.cart_token?.substring(0, 10) + '...');
         
-        // Keep using the guest cart token - the backend should merge carts server-side
-        if (guestCartToken) {
-          devLog('🔐 AuthModal: Preserving guest cart token and fetching updated cart');
-          fetchCart().catch(devWarn);
-        } else if (response.cart_token) {
-          // Only set the registration cart token if we don't have a guest cart
-          const { setCartToken } = useCart.getState();
-          devLog('🔐 AuthModal: No guest cart, using registration response cart token');
+        // Use the authenticated user's cart token if available
+        if (response.cart_token) {
+          devLog('🔐 AuthModal: Setting authenticated user cart token');
           setCartToken(response.cart_token);
+          
+          // Fetch the user's cart to see if it's empty
+          try {
+            await fetchCart();
+            const { items: userCartItems } = useCart.getState();
+            const userItemsCount = Object.keys(userCartItems).length;
+            
+            devLog('🔐 AuthModal: User cart items after registration fetch:', userItemsCount);
+            devLog('🔐 AuthModal: Guest cart items to merge:', guestItems.length);
+            
+            // If user cart is empty but we had guest items, merge them
+            if (userItemsCount === 0 && guestItems.length > 0) {
+              devLog('🔐 AuthModal: Merging guest cart items into user cart');
+              
+              // Add each guest item to the user's cart using the SDK directly
+              for (const guestItem of guestItems) {
+                try {
+                  await sdk.cart.addItem(guestItem.product_id, guestItem.quantity);
+                  devLog('🔐 AuthModal: Added guest item to user cart:', guestItem.product_id);
+                } catch (error) {
+                  devWarn('🔐 AuthModal: Failed to add guest item:', guestItem.product_id, error);
+                }
+              }
+              
+              // Fetch cart again to get the updated state
+              await fetchCart();
+              devLog('🔐 AuthModal: Cart merge completed after registration');
+            }
+          } catch (error) {
+            devWarn('🔐 AuthModal: Error during cart merging after registration:', error);
+          }
+        } else if (guestCartToken) {
+          // Fallback: keep using guest cart if no user cart token
+          devLog('🔐 AuthModal: No user cart token, keeping guest cart');
           fetchCart().catch(devWarn);
         }
         

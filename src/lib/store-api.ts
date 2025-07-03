@@ -131,8 +131,10 @@ export const authApi = {
     return await sdk.auth.resendOTP(sessionToken) as any;
   },
 
-  completeRegistration: async (data: any) => {
-    return await sdk.auth.completeRegistration(data) as any;
+  completeRegistration: async (data: any, sessionToken?: string) => {
+    // Include session token in the data if provided
+    const registrationData = sessionToken ? { ...data, session_token: sessionToken } : data;
+    return await sdk.auth.completeRegistration(registrationData) as any;
   }
 };
 
